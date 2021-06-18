@@ -1,3 +1,4 @@
 # Don't track the following files/directories
 *DS_Store
 *scratch
+*.Rhistory
