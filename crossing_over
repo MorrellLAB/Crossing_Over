@@ -1,0 +1,96 @@
+#!/bin/bash
+
+set -o pipefail
+
+#set -x # For development purposes, remove later
+
+function usage() {
+    echo -e "\
+    Usage: `basename $0` <routine> <config>
+    
+    Where: <routine> is one of:
+        1 | Split_by_Family
+        2 | Parental_Fill_In
+        3 | Mendel_Checking
+        4 | Make_Rqtl_Files
+        5 | Crossovers
+    
+    And: <config> is the full file path to the configuration file
+    " >&2
+    exit 1
+}
+
+export -f usage
+
+# Where is 'crossing_over' located?
+SCRIPT=$(realpath "$0") # Trace back the symbolic link to find the actual location
+CROSSING_OVER=$(dirname "${SCRIPT}")
+
+# Check if we have less than two arguments
+#   If yes, display usage message
+if [[ "$#" -lt 1 ]]; then usage; fi
+
+# Which routine are we running?
+ROUTINE="$1"
+# Where is our config file?
+CONFIG=$(realpath "$2")
+
+# If the config exists, source it to provide parameters and software
+if [[ -f "${CONFIG}" ]]
+then
+    source "${CONFIG}"
+else
+    echo "Please specify a valid config file." >&2
+    exit 1 # Exit with non-zero exit status
+fi
+
+# After loading config, make sure output directory exists
+mkdir -p "${OUT_DIR}"
+if ! [[ -w "${OUT_DIR}" ]]
+then
+    echo "You don't have write permissions for the output directory ${OUT_DIR}, exiting..." >&2
+    exit 1
+fi
+
+# Run crossing_over
+case "${ROUTINE}" in
+    1 | Split_by_Family)
+        "${CROSSING_OVER}"/scripts/data_handling/split_by_family.sh \
+            "${PED_FILE}" \
+            "${OUT_DIR}" \
+            "${CROSSING_OVER}"
+    ;;
+    2 | Parental_Fill_In)
+        # Requires GNU parallel, add check for dependency
+        "${CROSSING_OVER}"/scripts/data_handling/PED_parental_fill-in.sh \
+            "${PED_LIST}" \
+            "${OUT_DIR}" \
+            "${CROSSING_OVER}"
+    ;;
+    3 | Mendel_Checking)
+        echo "Will be available in the near future, currently under development..."
+    ;;
+    4 | Make_Rqtl_Files)
+        # Convert Plink 1.9 files to R/qtl2 input file format
+        "${CROSSING_OVER}"/scripts/data_handling/Plink2Rqtl2_format.sh \
+            "${PED_DIR}" \
+            "${MAP_FILE}" \
+            "${LOOKUP_TABLE}" \
+            "${OUT_DIR}" \
+            "${CROSSING_OVER}"
+        # Generate R/qtl2 control files (i.e., .yaml files)
+        "${CROSSING_OVER}"/scripts/data_handling/make_control_files.sh \
+            "${QTL_INPUTS_DIR}" \
+            "${CROSSING_OVER}"
+    ;;
+    5 | Crossovers)
+        "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
+            "${YAML_DIR}" \
+            "${PERICENTROMERES}" \
+            "${OUT_DIR}" \
+            "${CROSSING_OVER}"
+    ;;
+    * )
+    usage
+    ;;
+esac
