@@ -85,7 +85,7 @@ case "${ROUTINE}" in
     ;;
     5 | Crossovers)
         "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
-            "${YAML_DIR}" \
+            "${QTL_INPUTS_DIR}" \
             "${PERICENTROMERES}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
