@@ -6,7 +6,7 @@ set -o pipefail
 
 function usage() {
     echo -e "\
-    Usage: `basename $0` <routine> <config>
+    Usage: ./`basename $0` <routine> <config>
     
     Where: <routine> is one of:
         1 | Split_by_Family
