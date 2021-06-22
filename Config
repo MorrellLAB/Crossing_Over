@@ -16,6 +16,11 @@ LOOKUP_TABLE=
 #   Full file path to file containing pericentromere locations
 PERICENTROMERES=
 
+#######################
+#   All lists and subdirectories below will be automatically generated
+#       by the pipeline and do not need to be modified unless the user
+#       manually changes the filename/subdirectory names
+
 #   Full file path to a list of PED files split by family (output from Split_by_Family routine)
 #   This file is generated in the Split_by_Family routine and excludes the
 #       parents themselves (parents have a naming scheme similar to "-9_Mendel.ped")
