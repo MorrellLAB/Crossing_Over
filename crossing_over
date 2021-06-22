@@ -14,7 +14,7 @@ function usage() {
         3 | Mendel_Checking
         4 | Make_Rqtl_Files
         5 | Crossovers
-        6 | Mixed_Model_Analysis
+        6 | GEMMA_Analysis
     
     And: <config> is the full file path to the configuration file
     " >&2
@@ -92,7 +92,7 @@ case "${ROUTINE}" in
             "${CROSSING_OVER}"
         # Add step that calls on plotting scripts
     ;;
-    6 | Mixed_Model_Analysis)
+    6 | GEMMA_Analysis)
         echo "Will be available in the near future, currently under development..."
     ;;
     * )
