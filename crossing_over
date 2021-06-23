@@ -93,6 +93,7 @@ case "${ROUTINE}" in
         # Add step that calls on plotting scripts
     ;;
     6 | GEMMA_Analysis)
+        # GEMMA: Genome-wide Efficient Mixed Model Association
         echo "Will be available in the near future, currently under development..."
     ;;
     * )
