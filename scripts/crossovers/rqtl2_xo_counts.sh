@@ -20,18 +20,8 @@ find "${YAML_DIR}" -name "*.yaml" | sort -V > "${YAML_DIR}/all_yaml_files_list.t
 # Check if out dir exists, if not make it
 mkdir -p "${OUT_DIR}" \
          "${OUT_DIR}/genetic_map_plots" \
-         "${OUT_DIR}/genetic_map_plots/gmap_by_chr" \
-         "${OUT_DIR}/genetic_map_plots/gmap_by_ind" \
          "${OUT_DIR}/other_summaries" \
-         "${OUT_DIR}/phenotype_tables" \
-         "${OUT_DIR}/physical_map_plots" \
-         "${OUT_DIR}/physical_map_plots/pmap_by_chr" \
-         "${OUT_DIR}/physical_map_plots/pmap_by_ind" \
-         "${OUT_DIR}/too_few_markers" \
-         "${OUT_DIR}/percent_missing_interactive_plots" \
-         "${OUT_DIR}/percent_missing_data" \
-         "${OUT_DIR}/num_xo_interactive_plots" \
-         "${OUT_DIR}/num_xo_data"
+         "${OUT_DIR}/physical_map_plots"
 
 function xo_counts() {
     local yaml_file="$1"
@@ -42,31 +32,18 @@ function xo_counts() {
     rqtl2_xo_counts.R \
         "${yaml_file}" \
         "${pcent_file}" \
-        "${out_dir}" &> "${out_dir}"/"${name}".log
+        "${out_dir}" &> "${out_dir}"/other_summaries/"${name}".log
 }
 
 export -f xo_counts
 
 # Run program in parallel
+echo "Counting crossovers..."
 parallel xo_counts {} "${PCENT_FP}" "${OUT_DIR}" :::: "${YAML_DIR}/all_yaml_files_list.txt"
 
 # Reorganize output files
-cd "${OUT_DIR}"
-echo "Reorganizing..."
-set -x
-mv too_few_markers_per_chr*.txt "${OUT_DIR}/too_few_markers/"
-mv *gmap_xo_cM_by_chr.pdf "${OUT_DIR}/genetic_map_plots/gmap_by_chr/"
-mv *gmap_xo_cM_by_ind.pdf "${OUT_DIR}/genetic_map_plots/gmap_by_ind/"
-mv *pheno.txt "${OUT_DIR}/phenotype_tables/"
-mv *pmap_xo_Mbp_by_chr.pdf "${OUT_DIR}/physical_map_plots/pmap_by_chr/"
-mv *pmap_xo_Mbp_by_ind.pdf "${OUT_DIR}/physical_map_plots/pmap_by_ind/"
-mv *.log "${OUT_DIR}/other_summaries/"
-mv *_duplicates_summary.txt "${OUT_DIR}/other_summaries/"
-mv *_percent_missing.html "${OUT_DIR}/percent_missing_interactive_plots/"
-mv *_percent_missing.txt "${OUT_DIR}/percent_missing_data/"
-mv *_num_xo.html "${OUT_DIR}/num_xo_interactive_plots/"
-mv *_xo_count.txt "${OUT_DIR}/num_xo_data/"
+echo "Cleaning up intermediate files..."
 # Cleanup intermediate files
-rm -rf "${OUT_DIR}/*_percent_missing_files"
-rm -rf "${OUT_DIR}/*_num_xo_files"
-set +x
+rm -rf "${OUT_DIR}"/percent_missing_interactive_plots/*_percent_missing_files
+rm -rf "${OUT_DIR}"/num_xo_interactive_plots/*_num_xo_files
+echo "Done."
