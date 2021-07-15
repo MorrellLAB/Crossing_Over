@@ -10,6 +10,9 @@ PED_FILE=
 #   Full file path to our Plink 1.9 MAP file
 MAP_FILE=
 
+#   Full file path to our Plink 1.9 FAM file
+FAM_FILE=
+
 #   Full file path to file that contains AB Genotypes
 LOOKUP_TABLE=
 
@@ -35,3 +38,10 @@ PED_DIR="${OUT_DIR}/split_by_family_fillIn"
 #   Full file path to the directory containing qtl2 inputs
 #       The default path below will work assuming you used the directory output from the previous step in the pipeline and didn't rename it
 QTL_INPUTS_DIR="${OUT_DIR}/qtl2inputs"
+
+#   Full file path to the directory containing XO phenotypes
+XO_DATA_DIR="${OUT_DIR}/rqtl2/num_xo_data"
+
+#   PED file with phenotypes added
+PED_PREFIX=$(basename ${PED_FILE} .ped)
+PED_PHENO_FILE="${OUT_DIR}/${PED_PREFIX}_pheno.ped"
