@@ -11,6 +11,7 @@ MAP_FILE="$2"
 LOOKUP_TABLE="$3"
 OUT_DIR="$4"
 SCRIPT_DIR="$5"
+SUFFIX="$6" # Example: "_Mendel_fillIn.ped"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/data_handling:"${PATH}"
@@ -27,18 +28,19 @@ function plink2rqtl2() {
     local map_file="$2"
     local lookup_table="$3"
     local out_dir="$4"
-    outfile_prefix=$(basename "${ped_file}" _Mendel_fillIn.ped)
+    local file_suffix="$5"
+    outfile_prefix=$(basename ${ped_file} ${file_suffix})
     # Convert PED and MAP files to rqtl2 file formats
     Plink2Rqtl2.py \
         "${ped_file}" \
         "${map_file}" \
         "${lookup_table}" \
-        "${out_dir}/${outfile_prefix}_fillIn"
+        "${out_dir}/${outfile_prefix}"
 }
 
 export -f plink2rqtl2
 
 # Run program in parallel
 echo "Converting Plink to Rqtl2 input file formats..."
-parallel plink2rqtl2 {} "${MAP_FILE}" "${LOOKUP_TABLE}" "${OUT_DIR}/qtl2inputs" :::: "${PED_DIR}/ped_list.txt"
+parallel plink2rqtl2 {} "${MAP_FILE}" "${LOOKUP_TABLE}" "${OUT_DIR}/qtl2inputs" "${SUFFIX}" :::: "${PED_DIR}/ped_list.txt"
 echo "Done converting Plink to Rqtl2 input file formats."

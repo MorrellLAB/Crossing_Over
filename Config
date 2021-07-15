@@ -19,6 +19,11 @@ LOOKUP_TABLE=
 #   Full file path to file containing pericentromere locations
 PERICENTROMERES=
 
+#   Crosstype (for R/qtl2 step)
+#   Currently supported R/qtl2 cross types:
+#       "f2", "dh"
+CROSSTYPE=
+
 #######################
 #   All lists and subdirectories below will be automatically generated
 #       by the pipeline and do not need to be modified unless the user
@@ -34,6 +39,13 @@ PED_LIST="${OUT_DIR}/split_by_family/split_ped_files_list.txt"
 #       If parental fill-in was run, this will be the "split_by_family_fillIn" subdirectory
 #       If not, this will be the "split_by_family" subdirectory
 PED_DIR="${OUT_DIR}/split_by_family_fillIn"
+
+#   Suffix for files in split_by_family_fillIn or split_by_family directory
+#   Example file: MS11S2024_Mendel_fillIn.ped
+#       Sample name is "MS11S2024"
+#       Suffix should be "_Mendel_fillIn.ped"
+#   The suffix will be used to generate clean and consistent output filenames, so it must match the file suffix in the PED_DIR
+P2RQTL2_SUFFIX="_Mendel_fillIn.ped"
 
 #   Full file path to the directory containing qtl2 inputs
 #       The default path below will work assuming you used the directory output from the previous step in the pipeline and didn't rename it

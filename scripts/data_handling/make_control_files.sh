@@ -11,7 +11,7 @@ set -o pipefail
 QTL_INPUTS_DIR="$1"
 SCRIPT_DIR="$2"
 CROSSTYPE="$3"
-SUFFIX="_fillIn_progeny_AB_geno.csv"
+SUFFIX="_progeny_AB_geno.csv"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/data_handling:"${PATH}"
@@ -30,16 +30,15 @@ function make_yaml() {
     local prefix="$1"
     local qtl2inputs_dir="$2"
     local crosstype="$3"
-    outfile_prefix=$(basename "${ped_file}" _Mendel_fillIn.ped)
     # Make YAML control file for each family
     # Output dir is same as qtl2inputs_dir because yaml file
     # needs to be in same directory as inputs
     make_control_file.R \
         ${prefix} \
-        ${prefix}_fillIn_progeny_AB_geno.csv \
-        ${prefix}_fillIn_founder_AB_geno.csv \
-        ${prefix}_fillIn_gmap.csv \
-        ${prefix}_fillIn_pmap.csv \
+        ${prefix}_progeny_AB_geno.csv \
+        ${prefix}_founder_AB_geno.csv \
+        ${prefix}_gmap.csv \
+        ${prefix}_pmap.csv \
         ${qtl2inputs_dir} \
         ${crosstype}
 }
