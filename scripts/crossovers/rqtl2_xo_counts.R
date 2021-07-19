@@ -11,7 +11,7 @@ library(ggplot2)
 library(dplyr)
 library(htmlwidgets)
 
-prepOutDir <- function(out_dir, subdir_name) {
+PrepOutDir <- function(out_dir, subdir_name) {
     sub_dir <- paste0(out_dir, "/", subdir_name, sep = '')
     # Create output subdirectory if it doesn't exist
     if (!dir.exists(sub_dir)) {
@@ -20,13 +20,13 @@ prepOutDir <- function(out_dir, subdir_name) {
     return(sub_dir)
 }
 
-readFile <- function(yaml_file) {
+ReadFile <- function(yaml_file) {
     # Read in files
     dat_cross2 <- read_cross2(yaml_file)
     return(dat_cross2)
 }
 
-readPericentromerePos <- function(pcent_file) {
+ReadPericentromerePos <- function(pcent_file) {
     # Store centromere physical positions
     pcent <- read.table(file = pcent_file, sep = " ",
                         col.names = c("chr", "pstart", "pend", "type"))
@@ -39,15 +39,15 @@ readPericentromerePos <- function(pcent_file) {
     return(pcent)
 }
 
-plotMissing <- function(dat, samp_name, out_dir) {
+PlotMissing <- function(dat, samp_name, out_dir) {
     percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
     labels <- paste0(names(percent_missing), " (", round(percent_missing), "%)")
     missing_plot <- iplot(seq_along(percent_missing), percent_missing, indID=labels,
           chartOpts=list(xlab="Individuals", ylab="Percent missing genotype data",
                          ylim=c(0, 100)))
     # Prepare subdirectories
-    out_dir_pmiss_html <- prepOutDir(out_dir, "percent_missing_interactive_plots")
-    out_dir_pmiss_txt <- prepOutDir(out_dir, "percent_missing_data")
+    out_dir_pmiss_html <- PrepOutDir(out_dir, "percent_missing_interactive_plots")
+    out_dir_pmiss_txt <- PrepOutDir(out_dir, "percent_missing_data")
     htmlwidgets::saveWidget(missing_plot, file=paste0(out_dir_pmiss_html, "/", samp_name, "_percent_missing.html"))
     # Save data to file
     temp_df <- as.data.frame(percent_missing)
@@ -61,7 +61,7 @@ plotMissing <- function(dat, samp_name, out_dir) {
     )
 }
 
-plotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
+PlotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
     percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
     numxo_plot <- iplot(seq_along(btotxo)[percent_missing < 19.97],
           btotxo[percent_missing < 19.97],
@@ -71,12 +71,12 @@ plotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
               axispos=list(xtitle=25, ytitle=50, xlabel=5, ylabel=5))
           )
     # Prepare subdirectories
-    out_dir_num_xo_html <- prepOutDir(out_dir, "num_xo_interactive_plots")
+    out_dir_num_xo_html <- PrepOutDir(out_dir, "num_xo_interactive_plots")
     htmlwidgets::saveWidget(numxo_plot, file=paste0(out_dir_num_xo_html, "/", samp_name, "_num_xo.html"))
 }
 
 # Reformat marker physical positions so they are easier to work with
-pullMarkerPhysPos <- function(dat) {
+PullMarkerPhysPos <- function(dat) {
     physpos_chr <- melt(dat$pmap)
     # Prepare column headers
     physpos <- as.data.frame(matrix(nrow=0, ncol=3, dimnames=list(NULL, c("chr", "snp", "pos"))))
@@ -91,7 +91,7 @@ pullMarkerPhysPos <- function(dat) {
     return(physpos)
 }
 
-geneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
+GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     # Reformat multiply nested lists
     lxodf_gmap <- melt(blxo)
     colnames(lxodf_gmap) <- c("xo_pos", "ind", "chr")
@@ -105,7 +105,7 @@ geneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     #     physpos <- rbind(physpos, new_df)
     # }
     # Reformat physical positions
-    physpos <- pullMarkerPhysPos(dat)
+    physpos <- PullMarkerPhysPos(dat)
     # Reformat genetic map
     bgmap <- melt(dat$gmap)
     colnames(bgmap) <- c("pos", "chr")
@@ -167,7 +167,7 @@ geneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
 }
 
 # Plot using physical map positions
-physicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
+PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
     # Reformat multiply nested lists
     lxodf <- melt(blxo_phys)
     colnames(lxodf) <- c("xo_pos", "ind", "chr")
@@ -239,7 +239,7 @@ physicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
 
 # Find the 2 closest markers just upstream and downstream of the crossover
 # Function works on a chromosome by chromosome basis, and one xo position at a time
-closest_flanking_markers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_indv) {
+ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_indv) {
     # Pull markers for current chromosome
     curr_markers <- marker_pos[marker_pos$chr == curr_chrom, ]
     # Calculate distances of markers from current xo position
@@ -294,7 +294,7 @@ closest_flanking_markers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_i
 
 # Categorize closest markers as:
 #   LP (left of pericentromere), P (pericentromere), RP (right of pericentromere)
-categorize_markers <- function(closest_markers, curr_pcent) {
+CategorizeMarkers <- function(closest_markers, curr_pcent) {
     # Prepare column names of output data frame
     df <- data.frame(matrix(ncol = 5, nrow = 0))
     colnames(df) <- c(colnames(closest_markers), "pcent_cat")
@@ -314,9 +314,9 @@ categorize_markers <- function(closest_markers, curr_pcent) {
     return(df)
 }
 
-makePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
+MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
     # Reformat physical positions
-    marker_pos <- pullMarkerPhysPos(dat)
+    marker_pos <- PullMarkerPhysPos(dat)
     
     pcolnames <- c("sampleID")
     # Create column names
@@ -348,10 +348,10 @@ makePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
             curr_pcent <- pcent[pcent$chr == chrom, ] # pericentromere for current chromosome
             for (xopos in tmp_pchr) {
                 # Identify the nearest 2 markers to the xo location
-                closest_markers <- closest_flanking_markers(marker_pos, curr_xo_pos=xopos, 
+                closest_markers <- ClosestFlankingMarkers(marker_pos, curr_xo_pos=xopos, 
                                                             curr_chrom=chrom, curr_indv = i)
                 # Categorize closest markers into LP, P, RP
-                marker_categories <- categorize_markers(closest_markers, curr_pcent)
+                marker_categories <- CategorizeMarkers(closest_markers, curr_pcent)
                 # If the two flanking markers for a xo position has the same pcent_cat, then
                 #   we are able to clearly place the xo on LP, P, or RP
                 # If the two flanking markers for a xo position don't have the same pcent_cat, then
@@ -389,7 +389,7 @@ makePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
 
 # After setting ambiguous crossovers to missing, we'll want to re-do our
 #   total/sample and total/chromosome counts
-update_counts <- function(pheno_df, n_chrom) {
+UpdateCounts <- function(pheno_df, n_chrom) {
     new_pheno_df <- data.frame(sampleID = pheno_df$sampleID)
     sample_xo_total <- pheno_df %>% dplyr::select(starts_with("chr")) %>%
         mutate_if(is.character, as.numeric) %>%
@@ -413,15 +413,15 @@ update_counts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
+RunXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
-    plotMissing(dat, samp_name, out_dir)
+    PlotMissing(dat, samp_name, out_dir)
     # Look for sample duplicates
     cg <- compare_geno(dat, cores=0)
     # Prepare subdirectories
-    out_dir_dups <- prepOutDir(out_dir, "other_summaries")
+    out_dir_dups <- PrepOutDir(out_dir, "other_summaries")
     capture.output(summary(cg), file = paste0(out_dir_dups, "/", samp_name, "_duplicates_summary.txt"))
     
     # Calculate genotype probabilities first
@@ -447,7 +447,7 @@ runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     xo_count_df <- cbind(temp_out_df, bnxo)
     rownames(xo_count_df) <- c()
     # Prepare subdirectories
-    out_dir_xo_count <- prepOutDir(out_dir, "num_xo_data")
+    out_dir_xo_count <- PrepOutDir(out_dir, "num_xo_data")
     write.table(
         x = xo_count_df,
         file = paste0(out_dir_xo_count, "/", samp_name, "_xo_count.txt"),
@@ -456,7 +456,7 @@ runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
         row.names = FALSE
     )
     # Plot of # of crossovers
-    plotNumXO(dat, btotxo, "F3 Barley Individuals", samp_name, out_dir)
+    PlotNumXO(dat, btotxo, "F3 Barley Individuals", samp_name, out_dir)
     
     # Locate crossovers
     blxo <- locate_xo(bm, map = dat$gmap, cores = 0)
@@ -465,15 +465,15 @@ runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     
     # Make crossover plots
     # Genetic map plot
-    out_dir_gmap <- prepOutDir(out_dir, "genetic_map_plots")
+    out_dir_gmap <- PrepOutDir(out_dir, "genetic_map_plots")
     out_dir_gmap <- paste0(out_dir, "/genetic_map_plots", sep = '')
-    geneticMapPlotting(dat, blxo, samp_name, out_dir_gmap)
+    GeneticMapPlotting(dat, blxo, samp_name, out_dir_gmap)
     # Physical map plot
-    out_dir_pmap <- prepOutDir(out_dir, "physical_map_plots")
-    lxodf <- physicalMapPlotting(dat, blxo_phys, pcent, samp_name, out_dir_pmap)
+    out_dir_pmap <- PrepOutDir(out_dir, "physical_map_plots")
+    lxodf <- PhysicalMapPlotting(dat, blxo_phys, pcent, samp_name, out_dir_pmap)
     
     # Create and save phenotype table
-    pheno_out_list <- makePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir)
+    pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir)
     pheno_df <- pheno_out_list[[1]]
     new_lxodf <- pheno_out_list[[2]]
     
@@ -511,18 +511,18 @@ runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     
     # Physical map plot
     # After setting ambiguous crossovers to missing
-    out_dir_miss <- prepOutDir(out_dir, "physical_map_plots_miss")
-    lxodf_miss <- physicalMapPlotting(dat, new_blxo_phys, pcent, samp_name, out_dir_miss)
+    out_dir_miss <- PrepOutDir(out_dir, "physical_map_plots_miss")
+    lxodf_miss <- PhysicalMapPlotting(dat, new_blxo_phys, pcent, samp_name, out_dir_miss)
     
     ############### Add feature ############### 
     # Combine total xo counts and xo counts by chr with pheno table
     # Since we want these counts after setting ambiguous crossovers to missing,
     #   we'll sum different cuts of the pheno_df data frame
-    new_pheno_df <- update_counts(pheno_df, n_chrom)
+    new_pheno_df <- UpdateCounts(pheno_df, n_chrom)
     ###########################################
     
     # Prepare subdirectories
-    out_dir_pheno <- prepOutDir(out_dir, "phenotype_tables")
+    out_dir_pheno <- PrepOutDir(out_dir, "phenotype_tables")
     # Save phenotype table
     write.table(x = new_pheno_df,
                 file = paste(out_dir_pheno, "/", samp_name, "_pheno.txt", sep = ""),
@@ -531,7 +531,7 @@ runXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
                 row.names = FALSE)
 }
 
-main <- function() {
+Main <- function() {
     # Take command line arguments
     args <- commandArgs(trailingOnly = TRUE)
     # User provided command line arguments
@@ -540,8 +540,8 @@ main <- function() {
     out_dir <- args[3]
     
     # Read in files
-    dat <- readFile(yaml_fp)
-    pcent <- readPericentromerePos(pcent_fp)
+    dat <- ReadFile(yaml_fp)
+    pcent <- ReadPericentromerePos(pcent_fp)
     
     # Do some processing
     # R/qtl2 complained about pmap not being sorted correctly, so manually sort
@@ -569,14 +569,14 @@ main <- function() {
         print(samp_name)
         print("Not enough markers per chromosome, saving sample to log file and exiting analysis")
         # Prep subdirectories
-        out_dir_too_few <- prepOutDir(out_dir, "too_few_markers")
+        out_dir_too_few <- PrepOutDir(out_dir, "too_few_markers")
         # Send summary output to a file
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        runXOAnalysis(dat_omit_null, pcent, samp_name, out_dir)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, out_dir)
     }
 }
 
 # Run the program
-main()
+Main()
