@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-library(qtl2)
 library(data.table)
 library(plyr)
 library(ggplot2)
@@ -11,7 +10,6 @@ args <- commandArgs(trailingOnly = TRUE)
 xo_data_dir <- args[1]
 out_dir <- args[2]
 pedigree_fp <- args[3] # Full pedigree file with 3 columns: family_id, parent1, parent2
-yaml_dir <- args[4]
 # CSV file containing comma separated list of family_id prefixes used to group plots where
 # Column 1: family_id prefixes that match with filenames
 # Column 2: Plot name to use for each family
@@ -21,7 +19,7 @@ yaml_dir <- args[4]
 #     Cycle 2 prefix,plot name: MS11,Cycle 2 Families,c2_nxo_summary_plot
 #     Cycle 3 prefix,plot name: MS12,Cycle 3 Families,c3_nxo_summary_plot
 #   See toy dataset family_plot_groupings.csv for more details
-plot_groupings_fp <- args[5]
+plot_groupings_fp <- args[4]
 
 #----------------------------------
 
@@ -39,37 +37,9 @@ colnames(pedigree) <- c("family_id", "parent1", "parent2")
 files <- list.files(path = xo_data_dir, pattern = ".txt")
 fp <- paste0(xo_data_dir, "/", files)
 
-# Read in SNP data for each family
-# Match end of string only
-yaml_files <- list.files(path = yaml_dir, pattern = ".yaml$")
-yaml_fp <- paste0(yaml_dir, "/", yaml_files)
-dcross2 <- list()
-datcross2 <- list()
-total_markers <- list()
-for (i in 1:length(yaml_fp)) {
-    yaml_prefix <- basename(yaml_fp[i])
-    fam_name <- sub(pattern = "_forqtl2.yaml", replacement = "", x = yaml_prefix)
-    # Read in files
-    dcross2[[i]] <- read_cross2(yaml_fp[i])
-    # R/qtl2 complained about pmap not being sorted correctly, so manually sort
-    for (j in seq_along(dcross2[[i]]$pmap)) {
-        dcross2[[i]]$pmap[[j]] <- sort(dcross2[[i]]$pmap[[j]])
-    }
-    # Omit markers without any genotype data or noninformative genotypes
-    datcross2[[i]] <- drop_nullmarkers(dcross2[[i]])
-    temp <- summary(datcross2[[i]])
-    total_markers[[i]] <- data.frame(family=fam_name, tot_markers=temp$totmar)
-}
-# Check if physical map is now ordered correctly
-check_cross2(datcross2[[1]])
-check_cross2(datcross2[[10]])
-tmp <- summary(datcross2[[1]])
-tmp$nmar
-
-# Read in coverage histogram file
-xocount <- list()
 # Using fread to read in file instead of read.table or read.delim2
 # because fread is significantly faster than both
+xocount <- list()
 for (i in 1:length(fp)) {
     xocount[[i]] <- fread(file = fp[i], header = TRUE, sep = "\t")
 }
@@ -119,6 +89,7 @@ MakeBoxplotsByGroup <- function(family_id_prefix, curr_xlab, output_dir, output_
 for (r in 1:nrow(plot_groupings_df)) {
     curr_group <- plot_groupings_df[r, ]
     # Make boxplot
+    print(paste0("Plotting group: ", curr_group$plot_group_name))
     MakeBoxplotsByGroup(family_id_prefix = curr_group$family_id_prefix,
                         curr_xlab = curr_group$plot_group_name,
                         output_dir = out_dir,

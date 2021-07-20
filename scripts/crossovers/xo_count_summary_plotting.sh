@@ -10,9 +10,8 @@ set -o pipefail
 XO_DATA_DIR="$1"
 OUT_DIR="${2}/rqtl2"
 PEDIGREE="$3"
-YAML_DIR="$4"
-PLOT_GROUPINGS="$5"
-SCRIPT_DIR="$6"
+PLOT_GROUPINGS="$4"
+SCRIPT_DIR="$5"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
