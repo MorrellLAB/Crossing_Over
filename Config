@@ -19,6 +19,14 @@ LOOKUP_TABLE=
 #   Full file path to file containing pericentromere locations
 PERICENTROMERES=
 
+#   Full file path to file containing full pedigree
+#       File has 3 columns: family_id, parent1, parent2
+PEDIGREE=
+
+#   File containing groupings for plotting purposes
+#       See toy dataset family_plot_groupings.csv for more details on file format
+PLOT_GROUPINGS=
+
 #   Crosstype (for R/qtl2 step)
 #   Currently supported R/qtl2 cross types:
 #       "f2", "dh"

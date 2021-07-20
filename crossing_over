@@ -13,7 +13,8 @@ function usage() {
         2 | Parental_Fill_In
         3 | Mendel_Checking
         4 | Make_Rqtl_Files
-        5 | Crossovers
+        5a | Crossovers
+        5b | Crossovers_Summary_Plots
         6 | GEMMA_Analysis
     
     And: <config> is the full file path to the configuration file
@@ -86,13 +87,24 @@ case "${ROUTINE}" in
             "${CROSSING_OVER}" \
             "${CROSSTYPE}"
     ;;
-    5 | Crossovers)
+    5a | Crossovers)
+        echo "Generating crossover phenotypes..."
         "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
             "${QTL_INPUTS_DIR}" \
             "${PERICENTROMERES}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
-        # Add step that calls on plotting scripts
+    ;;
+    5b | Crossovers_Summary_Plots)
+        # Generate summary plots
+        echo "Generating crossover summary plots..."
+        "${CROSSING_OVER}"/scripts/crossovers/xo_count_summary_plotting.sh \
+            "${XO_DATA_DIR}" \
+            "${OUT_DIR}" \
+            "${PEDIGREE}" \
+            "${QTL_INPUTS_DIR}" \
+            "${PLOT_GROUPINGS}" \
+            "${CROSSING_OVER}"
     ;;
     6 | GEMMA_Analysis)
         # GEMMA: Genome-wide Efficient Mixed Model Association
