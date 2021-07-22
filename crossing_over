@@ -13,8 +13,8 @@ function usage() {
         1b | Parental_Fill_In
         2 | Mendel_Checking
         3 | Make_Rqtl_Files
-        4a | Data_Evaluation
-        4b | Crossovers
+        4a | Data_Diagnostics
+        4b | Crossover_Phenotyping
         4c | Crossovers_Summary_Plots
         5 | GEMMA_Analysis
     
@@ -90,10 +90,11 @@ case "${ROUTINE}" in
             "${CROSSING_OVER}" \
             "${CROSSTYPE}"
     ;;
-    4a | Data_Evaluation)
-        echo "Additional data evaluation prior to generating crossover phenotypes..."
+    4a | Data_Diagnostics)
+        echo "Run data diagnostic evaluation prior to generating crossover phenotypes..."
+        echo "Please look closely at the summary plots and make the necessary data corrections before proceeding to next step."
     ;;
-    4b | Crossovers)
+    4b | Crossover_Phenotyping)
         echo "Generating crossover phenotypes..."
         "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
             "${QTL_INPUTS_DIR}" \
