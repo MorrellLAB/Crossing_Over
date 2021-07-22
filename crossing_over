@@ -9,15 +9,18 @@ function usage() {
     Usage: ./`basename $0` <routine> <config>
     
     Where: <routine> is one of:
-        1 | Split_by_Family
-        2 | Parental_Fill_In
-        3 | Mendel_Checking
-        4 | Make_Rqtl_Files
-        5a | Crossovers
-        5b | Crossovers_Summary_Plots
-        6 | GEMMA_Analysis
+        1a | Split_by_Family
+        1b | Parental_Fill_In
+        2 | Mendel_Checking
+        3 | Make_Rqtl_Files
+        4a | Data_Evaluation
+        4b | Crossovers
+        4c | Crossovers_Summary_Plots
+        5 | GEMMA_Analysis
     
     And: <config> is the full file path to the configuration file
+
+    Routines can be specified by number (e.g., 1a) or by name (e.g., Split_by_Family). Some routines are optional, please refer to the documentation on which ones are optional.
     " >&2
     exit 1
 }
@@ -56,23 +59,23 @@ fi
 
 # Run crossing_over
 case "${ROUTINE}" in
-    1 | Split_by_Family)
+    1a | Split_by_Family)
         "${CROSSING_OVER}"/scripts/data_handling/split_by_family.sh \
             "${PED_FILE}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
-    2 | Parental_Fill_In)
+    1b | Parental_Fill_In)
         # Requires GNU parallel, add check for dependency
         "${CROSSING_OVER}"/scripts/data_handling/PED_parental_fill-in.sh \
             "${PED_LIST}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
-    3 | Mendel_Checking)
+    2 | Mendel_Checking)
         echo "Will be available in the near future, currently under development..."
     ;;
-    4 | Make_Rqtl_Files)
+    3 | Make_Rqtl_Files)
         # Convert Plink 1.9 files to R/qtl2 input file format
         "${CROSSING_OVER}"/scripts/data_handling/Plink2Rqtl2_format.sh \
             "${PED_DIR}" \
@@ -87,7 +90,10 @@ case "${ROUTINE}" in
             "${CROSSING_OVER}" \
             "${CROSSTYPE}"
     ;;
-    5a | Crossovers)
+    4a | Data_Evaluation)
+        echo "Additional data evaluation prior to generating crossover phenotypes..."
+    ;;
+    4b | Crossovers)
         echo "Generating crossover phenotypes..."
         "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
             "${QTL_INPUTS_DIR}" \
@@ -95,7 +101,7 @@ case "${ROUTINE}" in
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
-    5b | Crossovers_Summary_Plots)
+    4c | Crossovers_Summary_Plots)
         # Generate summary plots
         echo "Generating crossover summary plots..."
         "${CROSSING_OVER}"/scripts/crossovers/xo_count_summary_plotting.sh \
@@ -105,7 +111,7 @@ case "${ROUTINE}" in
             "${PLOT_GROUPINGS}" \
             "${CROSSING_OVER}"
     ;;
-    6 | GEMMA_Analysis)
+    5 | GEMMA_Analysis)
         # GEMMA: Genome-wide Efficient Mixed Model Association
         # Combine phenotypes with PLINK files
         "${CROSSING_OVER}"/scripts/Gemma/combine_pheno_and_plink.sh \
