@@ -27,9 +27,9 @@ PEDIGREE=
 #       See toy dataset family_plot_groupings.csv for more details on file format
 PLOT_GROUPINGS=
 
-#   Crosstype (for R/qtl2 step)
+#   Crossing scheme / Crosstype (for R/qtl2 step)
 #   Currently supported R/qtl2 cross types:
-#       "f2", "dh"
+#       "f2", "dh" (doubled haploid)
 CROSSTYPE=
 
 #######################
