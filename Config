@@ -33,6 +33,33 @@ PLOT_GROUPINGS=
 CROSSTYPE=
 
 #######################
+#   Data Diagnostics step specific variables
+
+# Lists of filenames, one filename per line
+# Example command to generate file lists needed:
+#   MS10S30 part should match your file prefixes
+#   find . -name "MS10S30*" | grep "progeny_AB_geno.csv" | sed 's,./,,' | sort -V > progeny_geno_list.txt
+#   find . -name "MS10S30*" | grep "founder_AB_geno.csv" | sed 's,./,,' | sort -V > founder_geno_list.txt
+#   find . -name "MS10S30*" | grep "gmap.csv" | sed 's,./,,' | sort -V > gmap_list.txt
+#   find . -name "MS10S30*" | grep "pmap.csv" | sed 's,./,,' | sort -V > pmap_list.txt
+
+# Fill out the full filepath to the respective *list.txt file
+PROGENY_GENO_LIST=
+
+FOUNDER_GENO_LIST=
+
+GMAP_LIST=
+
+PMAP_LIST=
+
+# Specify the prefix used for the YAML file since we are creating this
+#   based on the slice of data we want to run data diagnostics on.
+#   We can also run it on the entire dataset too.
+# This allows flexibility for various groupings (e.g., Genomic Prediction population cycles) depending on your study design
+# Default: "data_diagnostics" but can be modified
+YAML_PREFIX="data_diagnostics"
+
+#######################
 #   All lists and subdirectories below will be automatically generated
 #       by the pipeline and do not need to be modified unless the user
 #       manually changes the filename/subdirectory names
