@@ -84,7 +84,7 @@ case "${ROUTINE}" in
             "${OUT_DIR}" \
             "${CROSSING_OVER}" \
             "${P2RQTL2_SUFFIX}" \
-            "${CROSSING_OVER}"/scripts/utils.sh"
+            "${CROSSING_OVER}/scripts/utils.sh"
         # Generate R/qtl2 control files (i.e., .yaml files)
         "${CROSSING_OVER}"/scripts/data_handling/make_control_files.sh \
             "${QTL_INPUTS_DIR}" \
@@ -93,7 +93,7 @@ case "${ROUTINE}" in
     ;;
     4a | Data_Diagnostics)
         echo "Run data diagnostic evaluation prior to generating crossover phenotypes..."
-        echo "Please look closely at the summary plots and make the necessary data corrections before proceeding to next step."
+        echo "Please look closely at the summary plots and resolve any data issues before proceeding to next step."
     ;;
     4b | Crossover_Phenotyping)
         echo "Generating crossover phenotypes..."
