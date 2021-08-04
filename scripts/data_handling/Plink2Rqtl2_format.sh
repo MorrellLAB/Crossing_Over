@@ -12,12 +12,11 @@ LOOKUP_TABLE="$3"
 OUT_DIR="$4"
 SCRIPT_DIR="$5"
 SUFFIX="$6" # Example: "_Mendel_fillIn.ped"
-UTILS_SCRIPT="$7"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/data_handling:"${PATH}"
-# Load functions defined in utils_data_handling.sh script
-source ${UTILS_SCRIPT}
+# Load functions defined in utilities script
+source "${SCRIPT_DIR}"/scripts/utils.sh
 # Check that required functions exist
 test_function plink2rqtl2
 
