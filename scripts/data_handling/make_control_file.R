@@ -47,7 +47,7 @@ if (cross_type == "f2") {
         founder_geno_file = founder_geno_files,
         gmap_file = gmap_files,
         pmap_file = pmap_files,
-        geno_codes = list(AA=1, AB=2, BB=3),
+        geno_codes = list(AA=1, AB=2, BA=2, BB=3),
         na.strings = "NA",
         overwrite = TRUE
     )
