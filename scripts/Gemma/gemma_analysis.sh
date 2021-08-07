@@ -18,14 +18,18 @@ mkdir -p "${OUT_DIR}"
 PED_BASENAME=$(basename ${PED_FILE} .ped)
 
 # Compute kinship matrix
-# !!! Calling on Gemma tool needs to be generalized to work on all Gemma versions and not rely on specific installation path
-~/Shared/Software/GEMMA-0.98.1/gemma-0.98.1-linux-static \
+# Eventually, GEMMA installation will be automatically taken care of
+#   but for development purposes, to keep the software reference consistent,
+#   we created a symbolic link called "gemma" to the linux static build
+#   Example command run from within the same directory as the linux static build"
+#       ln -s /path/to/static_build/GEMMA-0.98.1/gemma-0.98.1-linux-static gemma
+gemma \
     -bfile ${PED_BASENAME} \
     -gk \
     -o ${OUT_DIR}/output/gw_xo_count_${PED_BASENAME}
 
 # Run univariate LMM and include column to indicate direction of effects
-~/Shared/Software/GEMMA-0.98.1/gemma-0.98.1-linux-static \
+gemma \
     -bfile ${PED_BASENAME} \
     -k ${OUT_DIR}/output/gw_xo_count_${PED_BASENAME}.cXX.txt \
     -lmm 4 \
