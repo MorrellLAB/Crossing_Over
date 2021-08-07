@@ -16,7 +16,8 @@ function usage() {
         4a | Data_Diagnostics
         4b | Crossover_Phenotyping
         4c | Crossovers_Summary_Plots
-        5 | GEMMA_Analysis
+        5a | GEMMA_File_Prep
+        5b | GEMMA_Analysis
     
     And: <config> is the full file path to the configuration file
 
@@ -121,15 +122,17 @@ case "${ROUTINE}" in
             "${PLOT_GROUPINGS}" \
             "${CROSSING_OVER}"
     ;;
-    5 | GEMMA_Analysis)
+    5a | GEMMA_File_Prep)
         # GEMMA: Genome-wide Efficient Mixed Model Association
         # Combine phenotypes with PLINK files
         "${CROSSING_OVER}"/scripts/Gemma/combine_pheno_and_plink.sh \
             "${XO_DATA_DIR}" \
-            "${FAM_FILE}" \
-            "${PED_FILE}" \
+            "${FINAL_SPLIT_PED_DIR}" \
+            "${FOUNDERS_PED}" \
             "${OUT_DIR}" \
-            "${SCRIPT_DIR}"
+            "${CROSSING_OVER}"
+    ;;
+    5b | GEMMA_Analysis)
         # Run GEMMA analysis
         "${CROSSING_OVER}"/scripts/Gemma/gemma_analysis.sh \
             "${PED_FILE}" \

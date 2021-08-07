@@ -87,8 +87,20 @@ P2RQTL2_SUFFIX="_Mendel_fillIn.ped"
 QTL_INPUTS_DIR="${OUT_DIR}/qtl2inputs"
 
 #   Full file path to the directory containing XO phenotypes
-XO_DATA_DIR="${OUT_DIR}/rqtl2/num_xo_data"
+XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
 
-#   PED file with phenotypes added
-PED_PREFIX=$(basename ${PED_FILE} .ped)
-PED_PHENO_FILE="${OUT_DIR}/${PED_PREFIX}_pheno.ped"
+#   Full filepath to the founders only PED file
+#       PED file that contains only the founder lines
+#       This gets used when we re-combine our split PED files back into a
+#           single PED file so we can add the new phenotypes and prepare for
+#           the Gemma analysis
+FOUNDERS_PED=
+
+#   Full filepath to the directory containing cleaned split PED files to combine
+#       This may be the same as the path stored in the variable PED_DIR, but
+#       that will depend on if the final cleaned split PED files are those
+#       same split PED files or new PED files.
+#   Default: set to same as PED_DIR, but should be modified otherwise
+#   Note: A list of PED files will be generated automatically from the
+#       directory and will include any file with a ".ped" file extension.
+FINAL_SPLIT_PED_DIR="${OUT_DIR}/split_by_family_fillIn"

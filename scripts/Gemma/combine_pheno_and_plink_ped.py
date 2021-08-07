@@ -1,24 +1,38 @@
 #!/usr/bin/env python3
+"""This script adds xo phenotypes from the phenotype table generated to
+the PED files in preparation for dowstream analysis. This script handles
+the multi-column phenotype table and creates a PED file for every phenotype column. Currently works with PLINK 1.9 PED file format.
 
-# Currently, script handles phenotype in a single column and
-# works for PLINK 1.9 PED file format.
-# In the future, will handle multiple columns of phenotypes.
+Usage: ./combine_pheno_and_plink_ped.py [xo_pheno_fp] [ped_fp] [out_dir]
+
+Where:
+1) [xo_pheno_fp] is the full filepath to the xo phenotypes table
+2) [ped_fp] is the full filepath to the recombined PED file
+3) [out_dir] is the full filepath to our output directory
+"""
 
 import os
 import sys
+import pandas as pd
 
-def read_xo_counts(xo_counts_fp):
+def read_xo_counts(xo_pheno_fp):
     """Read in xo counts file"""
     counts_dict = {}
-    with open(xo_counts_fp, "rt") as handle:
+    with open(xo_pheno_fp, "rt") as handle:
         for record in handle:
-            if record.startswith("ind"):
-                continue
+            if record.startswith("sampleID"):
+                counts_dict["header_line"] = record.split()
             else:
-                ind = record.split()[0]
-                xo_count = record.split()[1]
-                counts_dict[ind] = xo_count
-    return counts_dict
+                tmp = record.split()
+                ind = tmp[0]
+                counts_dict[ind] = tmp
+    return(counts_dict)
+
+
+def dict_to_pddf(input_dict):
+    """Convert dictionary to pandas data frame."""
+    df = pd.DataFrame.from_dict(input_dict, orient='index')
+    return(df)
 
 
 def read_plink_ped(plink_ped_fp):
@@ -34,55 +48,88 @@ def read_plink_ped(plink_ped_fp):
     return(parents_dict, ped_dict)
 
 
-def add_xo_counts(out_file, ped, xo_counts):
-    """Add xo count phenotype to ped dictionary. If individual
+def add_xo_pheno(ped, xo_pheno):
+    """Add xo phenotype to ped dictionary. If individual
     in ped dictionary does not have a xo phenotype, save to
-    log file and remove from output .ped file."""
-    # Make sure we start with clean log file
-    # log_dir = os.path.dirname(out_file)
-    # temp = log_dir, "/individuals_missing_xo_phenotype.log"
-    # log_filename = ''.join(temp)
-    # if os.path.exists(os.path.expanduser(log_filename)):
-    #     os.remove(os.path.expanduser(log_filename))
+    separate dictionary remove from output PED. xo_pheno is the
+    phenotype table stored in a dictionary."""
+    # Convert xo_pheno dict to pandas data frame
+    pheno_df = dict_to_pddf(xo_pheno)
     # Add xo phenotype
+    # Stores updated PED with xo phenotype added
     updated_ped_dict = {}
-    for counter, i in enumerate(ped):
-        if i in xo_counts.keys():
-            current = ped[i]
-            current[5] = xo_counts[i]
-            updated_ped_dict[i] = current
+
+    # Iteratively add one phenotype column to ped
+    for cidx in pheno_df.columns:
+        if cidx == 0:
+            continue
         else:
-            # Leave as is
-            updated_ped_dict[i] = ped[i]
-            # print("Individual not in xo counts phenotype file:", i)
-            # print("Saving to log file...")
-            # with open(os.path.expanduser(log_filename), 'a') as handle:
-            #     handle.write(" ".join(ped[i]) + "\n")
-    return updated_ped_dict
+            # Contains sampleID and one phenotype column
+            curr_pheno_df = pheno_df[[0, cidx]]
+            # Convert pandas dataframe to dictionary for downstream processing
+            curr_pheno_dict = curr_pheno_df.set_index(0).T.to_dict(orient="list")
+            for key in curr_pheno_dict.keys():
+                if key == "sampleID":
+                    continue
+                elif key in ped.keys():
+                    # Save current phenotype name (e.g., chr7_total)
+                    # Add as a new value in dictionary
+                    pheno_name = curr_pheno_dict['sampleID'][0]
+                    # Pull out xo phenotype
+                    curr_pheno_val = curr_pheno_dict[key][0]
+                    # Work corresponding sampleID in PED
+                    # Replace missing phenotype (-9) with new phenotype
+                    new_key = key + ":" + pheno_name
+                    current = ped[key]
+                    updated_ped_dict[new_key] = current
+                    updated_ped_dict[new_key][5] = curr_pheno_val
+    return(updated_ped_dict)
 
 
-def main(XO_COUNTS, PLINK_PED, OUT_FILE):
-    """Driver function."""
-    # Read in files
-    xo_counts = read_xo_counts(XO_COUNTS)
-    parents, ped = read_plink_ped(PLINK_PED)
-    # Add xo counts phenotype to ped dict
-    updated_ped = add_xo_counts(OUT_FILE, ped, xo_counts)
-    # Save to output file
+def write_to_ped(parents, curr_pheno_ped, out_fp):
+    """Write PED file for individuals with currently processing phenotype."""
     # Start from clean file, check if file exists
-    if os.path.exists(os.path.expanduser(OUT_FILE)):
-        os.remove(os.path.expanduser(OUT_FILE))
+    if os.path.exists(os.path.expanduser(out_fp)):
+        os.remove(os.path.expanduser(out_fp))
     # Start with parents first
-    with open(os.path.expanduser(OUT_FILE), 'a') as file:
+    with open(os.path.expanduser(out_fp), 'a') as file:
         for counter, i in enumerate(parents):
             file.write(" ".join(parents[i]) + "\n")
     # Now, add progeny
-    with open(os.path.expanduser(OUT_FILE), 'a') as file:
-        for counter, i in enumerate(updated_ped):
-            file.write(" ".join(updated_ped[i]) + "\n")
+    with open(os.path.expanduser(out_fp), 'a') as file:
+        for counter, i in enumerate(curr_pheno_ped):
+            file.write(" ".join(curr_pheno_ped[i]) + "\n")
+    return
+
+
+def main(xo_pheno_fp, ped_fp, out_dir):
+    """Driver function."""
+    # Output file prefix
+    # Read in files
+    xo_pheno = read_xo_counts(xo_pheno_fp)
+    parents, ped = read_plink_ped(ped_fp)
+    # Add xo phenotype to ped dict
+    updated_ped = add_xo_pheno(ped, xo_pheno)
+    # Save to output file
+    # One phenotype per PED file
+    for pelem in xo_pheno['header_line']:
+        if pelem == "sampleID":
+            continue
+        else:
+            # Prepare output file paths
+            out_suffix = pelem
+            # Make sure to remove trailing slash from directory path
+            out_fp = os.path.expanduser(out_dir.rstrip('/')) + '/pheno-' + out_suffix + '.ped'
+            # Make placeholder dictionary for current phenotype
+            tmp_pheno = {}
+            for key in updated_ped.keys():
+                tmp = key.split(':')
+                if pelem == tmp[1]:
+                    # Add individuals for current phenotype to tmp dictionary
+                    tmp_pheno[tmp[0]] = updated_ped[key]
+            # Write to file
+            write_to_ped(parents, tmp_pheno, out_fp)
     print("Done.")
     return
 
 main(sys.argv[1], sys.argv[2], sys.argv[3]) # Run the program
-
-
