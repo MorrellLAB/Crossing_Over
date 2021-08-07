@@ -7,8 +7,9 @@ set -o pipefail
 XO_DATA_DIR="$1"
 FINAL_SPLIT_PED_DIR="$2" # Contains split by family (corrected of errors) files
 FOUNDERS_PED="$3" # Contains founder lines only
-OUT_DIR="$4"
-SCRIPT_DIR="$5"
+MAP_FILE="$4"
+OUT_DIR="$5"
+SCRIPT_DIR="$6"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/Gemma:"${PATH}"
@@ -39,10 +40,18 @@ combine_pheno_and_plink_ped.py \
     ${OUT_DIR}/gemma_analysis/all_families.ped \
     ${OUT_DIR}/gemma_analysis/plink_pheno_files
 
-# Generate FAM file using plink
+# Generate FAM/MAP/BED/BIM files using plink
 for i in $(find ${OUT_DIR}/gemma_analysis/plink_pheno_files -name "pheno*.ped" | sort -V)
 do
     filename=$(basename ${i} .ped)
     # FAM file is the same as the first six fields in a PED file
     cut -d' ' -f 1-6 ${i} > ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.fam
+    # Generate MAP file and put in same directory as plink files
+    cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.map
+    # Generate BED/BIM files
+    plink \
+        --file ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename} \
+        --make-bed \
+        --allow-extra-chr \
+        --out ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}
 done
