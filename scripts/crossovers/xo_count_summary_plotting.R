@@ -53,9 +53,9 @@ for (i in 1:length(fp)) {
     tmp_fam_name <- tmp_family[[1]][1]
     xo_long[[i]] <- data.frame(
         ind = xocount[[i]]$sampleID,
-        total_nxo = xocount[[i]]$total_xo,
-        family = rep(tmp_fam_name, times = length(xocount[[i]]$total_xo)),
-        all = rep("together", times = length(xocount[[i]]$total_xo))
+        total_nxo = xocount[[i]]$sample_total,
+        family = rep(tmp_fam_name, times = length(xocount[[i]]$sample_total)),
+        all = rep("together", times = length(xocount[[i]]$sample_total))
     )
 }
 # Concatenate list of dataframes
