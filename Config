@@ -32,6 +32,9 @@ PLOT_GROUPINGS=
 #       "f2", "dh" (doubled haploid)
 CROSSTYPE=
 
+#   Temporary directory for intermediate/temporary files that don't need to be kept
+TEMP=
+
 #######################
 #   Data Diagnostics step specific variables
 
@@ -104,3 +107,6 @@ FOUNDERS_PED=
 #   Note: A list of PED files will be generated automatically from the
 #       directory and will include any file with a ".ped" file extension.
 FINAL_SPLIT_PED_DIR="${OUT_DIR}/split_by_family_fillIn"
+
+#   Full filepath to directory containing PLINK files with xo phenotypes
+PLINK_PHENO_DIR="${OUT_DIR}/gemma_analysis/plink_pheno_files"

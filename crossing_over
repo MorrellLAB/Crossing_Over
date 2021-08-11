@@ -129,6 +129,7 @@ case "${ROUTINE}" in
             "${XO_DATA_DIR}" \
             "${FINAL_SPLIT_PED_DIR}" \
             "${FOUNDERS_PED}" \
+            "${MAP_FILE}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
@@ -137,7 +138,8 @@ case "${ROUTINE}" in
         "${CROSSING_OVER}"/scripts/Gemma/gemma_analysis.sh \
             "${PED_FILE}" \
             "${OUT_DIR}" \
-            "${SCRIPT_DIR}"
+            "${SCRIPT_DIR}" \
+            "${TEMP}"
     ;;
     * )
     usage
