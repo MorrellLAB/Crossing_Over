@@ -215,5 +215,10 @@ def main(pedfile, mapfile, lookupfile, out_fp):
     write_map_to_csv(pmap, os.path.expanduser(out_fp) + "_pmap.csv")
     return
 
-
-main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+# Print usage message if we don't have enough input arguments
+if len(sys.argv) < 2:
+    print(__doc__)
+    exit(1)
+else:
+    # Run the program
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])

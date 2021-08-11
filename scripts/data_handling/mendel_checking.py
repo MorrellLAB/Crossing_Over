@@ -34,5 +34,10 @@ def main(pedfile, crosstype, out_dir):
     # Add calls to function here to perform Mendel checking
     return
 
-
-main(sys.argv[1], sys.argv[2], sys.argv[3])
+# Print usage message if we don't have enough input arguments
+if len(sys.argv) < 2:
+    print(__doc__)
+    exit(1)
+else:
+    # Run the program
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

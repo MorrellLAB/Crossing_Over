@@ -119,5 +119,10 @@ def main(pedfile, outPED, outfile):
                 out_ped.write(' '.join(out_df[key]) + '\n')
     return
 
-
-main(sys.argv[1], sys.argv[2], sys.argv[3])
+# Print usage message if we don't have enough input arguments
+if len(sys.argv) < 2:
+    print(__doc__)
+    exit(1)
+else:
+    # Run the program
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

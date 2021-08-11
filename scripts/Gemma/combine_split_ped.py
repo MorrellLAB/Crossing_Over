@@ -62,4 +62,10 @@ def main(founder_ped_fp, split_ped_list):
         parse_ped(fp)
     return
 
-main(sys.argv[1], sys.argv[2])
+# Print usage message if we don't have enough input arguments
+if len(sys.argv) < 2:
+    print(__doc__)
+    exit(1)
+else:
+    # Run the program
+    main(sys.argv[1], sys.argv[2])
