@@ -448,7 +448,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     rownames(xo_count_df) <- c()
 
     # Plot of # of crossovers
-    PlotNumXO(dat, btotxo, "F3 Barley Individuals", samp_name, out_dir)
+    PlotNumXO(dat, btotxo, "Individuals", samp_name, out_dir)
     
     # Locate crossovers
     blxo <- locate_xo(bm, map = dat$gmap, cores = 0)
