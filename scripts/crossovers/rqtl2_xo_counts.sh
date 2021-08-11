@@ -6,7 +6,7 @@ set -o pipefail
 # Driver script that runs R/qtl2 crossover count analysis on all families
 
 # User provided input arguments
-YAML_DIR="$1" # Containing yaml files corresponding to each family
+YAML_DIR=$(realpath "$1") # Containing yaml files corresponding to each family
 PCENT_FP="$2"
 OUT_DIR="${3}/rqtl2"
 SCRIPT_DIR="$4"
@@ -20,7 +20,17 @@ export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
 # These will automatically have a prefix of "data_diagnostics"
 # Exclude YAML files that don't apply to this step, these files
 #   have a file prefix of "data_diagnostics"
-find "${YAML_DIR}" -name "*.yaml" | grep -v "data_diagnostics" | sort -V > "${YAML_DIR}/all_yaml_files_list.txt"
+echo "Generating list of control files for each family."
+if test -n "$(find ${YAML_DIR} -name 'data_diagnostics*' -print -quit)"
+then
+    echo "exists"
+    echo "Files with prefix "data_diagnostics" exists, excluding them"
+    find "${YAML_DIR}" -name "*.yaml" | grep -v "data_diagnostics" | sort -V > "${YAML_DIR}/all_yaml_files_list.txt"
+else
+    # Don't have files with prefix "data_diagnostics"
+    # don't need to do anything special
+    find "${YAML_DIR}" -name "*.yaml" | sort -V > "${YAML_DIR}/all_yaml_files_list.txt"
+fi
 
 # Check if out dir exists, if not make it
 mkdir -p "${OUT_DIR}" \
