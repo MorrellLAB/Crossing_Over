@@ -432,7 +432,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     bm <- maxmarg(bpr, minprob=0.95, cores=0)
     
     # Crossover counts
-    # Returns counts of crossovers on each chromosome (as columns) in each mouse
+    # Returns counts of crossovers on each chromosome (as columns) in each individual
     bnxo <- count_xo(bm, cores=0)
     # Generate column names for per chr xo count
     bnxo_colnames <- gsub(pattern="^", replacement="chr", x=colnames(bnxo))
@@ -446,15 +446,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, out_dir) {
     temp_out_df <- data.frame(sampleID=rownames(temp_df), total_xo=temp_df$btotxo)
     xo_count_df <- cbind(temp_out_df, bnxo)
     rownames(xo_count_df) <- c()
-    # Prepare subdirectories
-    out_dir_xo_count <- PrepOutDir(out_dir, "num_xo_data")
-    write.table(
-        x = xo_count_df,
-        file = paste0(out_dir_xo_count, "/", samp_name, "_xo_count.txt"),
-        quote = FALSE,
-        sep = "\t",
-        row.names = FALSE
-    )
+
     # Plot of # of crossovers
     PlotNumXO(dat, btotxo, "F3 Barley Individuals", samp_name, out_dir)
     
