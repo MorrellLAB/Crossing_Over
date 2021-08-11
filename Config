@@ -58,9 +58,10 @@ PMAP_LIST=
 # Specify the prefix used for the YAML file since we are creating this
 #   based on the slice of data we want to run data diagnostics on.
 #   We can also run it on the entire dataset too.
-# This allows flexibility for various groupings (e.g., Genomic Prediction population cycles) depending on your study design
-# Default: "data_diagnostics" but can be modified
-YAML_PREFIX="data_diagnostics"
+#   This allows flexibility for various groupings (e.g., Genomic Prediction population cycles) depending on your study design
+# The final output file prefix will be "data_diagnostics_${DD_YAML_PREFIX}".
+# Default: "tmp" but can be modified
+DD_YAML_PREFIX="tmp"
 
 #######################
 #   All lists and subdirectories below will be automatically generated

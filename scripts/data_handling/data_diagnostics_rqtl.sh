@@ -35,7 +35,7 @@ QTL2INPUTS_DIR=$(dirname $(head -n 1 ${PROGENY_GENO_LIST}))
 # Output dir is same as qtl2inputs_dir because yaml file
 # needs to be in same directory as inputs
 make_control_file.R \
-    ${YAML_PREFIX} \
+    data_diagnostics_${YAML_PREFIX} \
     ${PROGENY_GENO_LIST} \
     ${FOUNDER_GENO_LIST} \
     ${GMAP_LIST} \
