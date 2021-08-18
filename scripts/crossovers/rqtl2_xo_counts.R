@@ -20,9 +20,21 @@ PrepOutDir <- function(out_dir, subdir_name) {
     return(sub_dir)
 }
 
+OrderByChrom <- function(curr_list) {
+    # Order chromosomes from smallest to largest for lists of lists in cross object
+    curr_list <- curr_list[order(as.numeric(names(curr_list)))]
+    return(curr_list)
+}
+
 ReadFile <- function(yaml_file) {
     # Read in files
     dat_cross2 <- read_cross2(yaml_file)
+    # Order chromosomes from smallest to largest for lists of lists in cross object
+    dat_cross2$geno <- OrderByChrom(dat_cross2$geno)
+    dat_cross2$gmap <- OrderByChrom(dat_cross2$gmap)
+    dat_cross2$pmap <- OrderByChrom(dat_cross2$pmap)
+    dat_cross2$founder_geno <- OrderByChrom(dat_cross2$founder_geno)
+    dat_cross2$is_x_chr <- OrderByChrom(dat_cross2$is_x_chr)
     return(dat_cross2)
 }
 
