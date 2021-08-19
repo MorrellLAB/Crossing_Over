@@ -48,7 +48,7 @@ function xo_counts() {
     rqtl2_xo_counts.R \
         "${yaml_file}" \
         "${pcent_file}" \
-        "${out_dir}" &> "${out_dir}"/other_summaries/"${name}".log
+        "${out_dir}" 2>&1 | tee "${out_dir}"/other_summaries/"${name}".log
 }
 
 export -f xo_counts

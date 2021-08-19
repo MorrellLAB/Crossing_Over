@@ -3,13 +3,13 @@
 # Usage:
 #   ./rqtl2_xo_counts.R [yaml_fp] [pcent_fp] [out_dir]
 
-library(qtl2)
-library(broman)
-library(qtlcharts)
-library(reshape2) # Use melt from this package to reshape multiply nested lists
-library(ggplot2)
-library(dplyr)
-library(htmlwidgets)
+suppressWarnings(suppressPackageStartupMessages(library(qtl2)))
+suppressWarnings(suppressPackageStartupMessages(library(broman)))
+suppressWarnings(suppressPackageStartupMessages(library(qtlcharts)))
+suppressWarnings(suppressPackageStartupMessages(library(reshape2))) # Use melt from this package to reshape multiply nested lists
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(htmlwidgets)))
 
 PrepOutDir <- function(out_dir, subdir_name) {
     sub_dir <- paste0(out_dir, "/", subdir_name, sep = '')
@@ -250,7 +250,6 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
     # Pull markers for current chromosome
     curr_markers <- marker_pos[marker_pos$chr == curr_chrom, ]
     # Calculate distances of markers from current xo position
-    #curr_markers$curr_xo_dist <- abs(curr_xo_pos - curr_markers$pos)
     curr_markers$curr_xo_dist <- abs(curr_xo_pos - curr_markers$pos)
     # Sort by distances of markers from current xo position
     sorted_curr_markers <- curr_markers[order(curr_markers$curr_xo_dist), ]
