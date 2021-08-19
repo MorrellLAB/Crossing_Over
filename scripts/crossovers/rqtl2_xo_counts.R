@@ -107,17 +107,6 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     # Reformat multiply nested lists
     lxodf_gmap <- melt(blxo)
     colnames(lxodf_gmap) <- c("xo_pos", "ind", "chr")
-    # physpos_chr <- melt(dat$pmap)
-    # physpos <- as.data.frame(matrix(nrow=0, ncol=3, dimnames=list(NULL, c("chr", "snp", "pos"))))
-    # for (i in seq_along(dat$pmap)) {
-    #     tmp_melt <- melt(dat$pmap[[i]])
-    #     tmp_chr_pos <- data.frame(snp=rownames(tmp_melt), pos=tmp_melt[,1])
-    #     chr <- rep(i, length(tmp_chr_pos$snp))
-    #     new_df <- cbind(chr, tmp_chr_pos)
-    #     physpos <- rbind(physpos, new_df)
-    # }
-    # Reformat physical positions
-    #physpos <- PullMarkerPhysPos(dat)
     # Reformat genetic map
     bgmap <- melt(dat$gmap)
     colnames(bgmap) <- c("pos", "chr")
