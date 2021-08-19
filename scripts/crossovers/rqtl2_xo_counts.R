@@ -117,7 +117,7 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     #     physpos <- rbind(physpos, new_df)
     # }
     # Reformat physical positions
-    physpos <- PullMarkerPhysPos(dat)
+    #physpos <- PullMarkerPhysPos(dat)
     # Reformat genetic map
     bgmap <- melt(dat$gmap)
     colnames(bgmap) <- c("pos", "chr")
@@ -140,14 +140,17 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
         dir.create(file.path(out_dir_by_chr)) # Create output subdirectory
     }
     
+    # Prepare chromosome labels
+    first_chr <- head(as.numeric(names(blxo)), n = 1)
+    last_chr <- tail(as.numeric(names(blxo)), n = 1)
     # Genetic map - Plotting all chr for each individual
     lpallind_gmap <- ggplot(lxodf_gmap, aes(x=xo_pos, y=as.numeric(chr)))
-    lpallind_gmap + geom_hline(yintercept = 1:7, color = "grey") +
+    lpallind_gmap + geom_hline(yintercept = first_chr:last_chr, color = "grey") +
         geom_point(shape = 4, aes(colour=factor(duplicate))) +
         scale_color_manual(values=c("#ff9933", "#cc0000")) +
         theme_classic() +
         theme(axis.line = element_line(size = 0.25), legend.title = element_blank()) +
-        scale_y_continuous(breaks=1:7) +
+        scale_y_continuous(breaks=first_chr:last_chr) +
         facet_wrap(~ind) +
         xlab("Crossover Position (cM)") +
         ylab("Chromosome")
@@ -155,18 +158,18 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     ggsave(filename = paste0(out_dir_by_ind, "/", samp_name, "_gmap_xo_cM_by_ind.pdf"),
            plot = last_plot(),
            device = "pdf",
-           width = 12, height = 10)
+           width = 16, height = 14) # Adjust this to scale automatically if possible
     
     # Genetic map - Plotting all individuals and facet wrap by chr
     lp_gmap <- ggplot(lxodf_gmap, aes(x=xo_pos, y=ind))
-    lp_gmap + geom_hline(yintercept = 1:24, color = "grey") +
+    lp_gmap + geom_hline(yintercept = 1:length(unique(lxodf_gmap$ind)), color = "grey") +
         geom_point(shape = 4, aes(colour=factor(duplicate))) +
         scale_colour_manual(values=c("#ff9933", "#cc0000")) +
         geom_point(data=bgmap, inherit.aes=FALSE, aes(x=pos, y=y),
                    shape=17, color="#ff9933", alpha=0.8) +
         theme_classic() +
         theme(axis.line = element_line(size = 0.25)) +
-        facet_wrap(~chr) +
+        facet_wrap(~as.numeric(chr)) +
         scale_y_discrete() +
         theme(legend.title = element_blank()) +
         xlab("Crossover Position (cM)") +
@@ -175,7 +178,7 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     ggsave(filename = paste0(out_dir_by_chr, "/", samp_name, "_gmap_xo_cM_by_chr.pdf"),
            plot = last_plot(),
            device = "pdf",
-           width = 12, height = 10)
+           width = 26, height = 26) # Adjust this to scale automatically if possible
 }
 
 # Plot using physical map positions
@@ -205,15 +208,18 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
         dir.create(file.path(out_dir_by_chr)) # Create output subdirectory
     }
     
+    # Prepare chromosome labels
+    first_chr <- head(as.numeric(names(blxo)), n = 1)
+    last_chr <- tail(as.numeric(names(blxo)), n = 1)
     # Physical map - Plotting all chr for each individual
     par(mfrow = c(1,1))
     lpallind <- ggplot(lxodf, aes(x=xo_pos, y=as.numeric(chr)))
-    lpallind + geom_hline(yintercept = 1:7, color = "grey") +
+    lpallind + geom_hline(yintercept = first_chr:last_chr, color = "grey") +
         geom_point(shape = 4, aes(colour=factor(duplicate))) +
         scale_colour_manual(values=c("#00ccff", "blue")) +
         theme_classic() +
         theme(axis.line = element_line(size = 0.25), legend.title = element_blank()) +
-        scale_y_continuous(breaks=1:7) +
+        scale_y_continuous(breaks=first_chr:last_chr) +
         facet_wrap(~ind) +
         xlab("Crossover Position (Mbp)") +
         ylab("Chromosome")
@@ -221,21 +227,21 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
     ggsave(filename = paste0(out_dir_by_ind, "/", samp_name, "_pmap_xo_Mbp_by_ind.pdf"),
            plot = last_plot(),
            device = "pdf",
-           width = 12, height = 10)
+           width = 16, height = 14) # Adjust this to scale automatically if possible
     
     # Physical map - Plot all individuals and facet wrap by chr
     lp <- ggplot(lxodf, aes(x=xo_pos, y=ind))
     lp + geom_rect(data=pcent, inherit.aes=FALSE, 
                    mapping=aes(xmin = pstartMb, xmax = pendMb, ymin = 0, ymax = Inf), 
                    fill = "grey80", alpha = 0.7) +
-        geom_hline(yintercept = 1:24, color = "grey") +
+        geom_hline(yintercept = 1:length(unique(lxodf$ind)), color = "grey") +
         geom_point(shape = 4, aes(colour=factor(duplicate))) +
         scale_colour_manual(values=c("#00ccff", "blue")) +
         geom_point(data=bpmap, inherit.aes=FALSE, aes(x=pos, y=y),
                    shape=17, color="#ff9933", alpha=0.8) + # Markers shown as triangles
         theme_classic() +
         theme(axis.line = element_line(size = 0.25)) +
-        facet_wrap(~chr) +
+        facet_wrap(~as.numeric(chr)) +
         scale_y_discrete() +
         theme(legend.title = element_blank()) +
         xlab("Crossover Position (Mbp)") +
@@ -244,7 +250,7 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
     ggsave(filename = paste0(out_dir_by_chr, "/", samp_name, "_pmap_xo_Mbp_by_chr.pdf"),
            plot = last_plot(),
            device = "pdf",
-           width = 12, height = 10)
+           width = 26, height = 26) # Adjust this to scale automatically if possible
     
     return(lxodf)
 }
