@@ -274,9 +274,9 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the left of the current xo position
-        print("Edge case...")
-        print("Current individual, Current chromosome, Current XO position:")
-        print(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
+        message("Edge case...")
+        message("Current individual, Current chromosome, Current XO position:")
+        message(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
         stop("There is no marker position to the left of the current xo position.")
     }
     # Get closest right flanking position
@@ -285,10 +285,30 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the right of the current xo position
-        print("Edge case...")
-        print("Current individual, Current chromosome, Current XO position:")
-        print(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
+        message("Edge case...")
+        message("Current individual, Current chromosome, Current XO position:")
+        message(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
         stop("There is no marker position to the right of the current xo position.")
+    }
+    
+    # Add check for cases where two or more markers have the same physical position.
+    # The user should pick the marker with the least amount of missing data as part of the data cleaning step
+    if (length(left_pos$pos) > 1) {
+        message("Two or more markers have the same physical position.")
+        message("Current xo position:", curr_xo_pos)
+        message("Current chromosome:", curr_chrom)
+        message("Current individual:", curr_indv)
+        message("Current left positions processing:", left_pos)
+        stop("Please investigate before proceeding")
+    }
+    
+    if (length(right_pos$pos) > 1) {
+        message("Two or more markers have the same physical position. Please investigate.")
+        message("Current xo position:", curr_xo_pos)
+        message("Current chromosome:", curr_chrom)
+        message("Current individual:", curr_indv)
+        message("Current left positions processing:", left_pos)
+        stop("Please investigate before proceeding")
     }
     
     # Check that current xo position falls between closest markers
