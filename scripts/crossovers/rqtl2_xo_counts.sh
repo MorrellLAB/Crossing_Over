@@ -43,6 +43,7 @@ function xo_counts() {
     local pcent_file="$2"
     local out_dir="$3"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
+    echo "Processing sample: ${name}..."
     # Run crossover analysis
     rqtl2_xo_counts.R \
         "${yaml_file}" \
