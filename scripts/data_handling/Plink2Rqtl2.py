@@ -149,6 +149,7 @@ def make_pos_map(map_dat):
         else:
             tmp_chr = map_dat[key][0]
         # Physical positions need to be in Mbp
+        #   as specified by R/qtl2's documentation
         tmp_phys = int(map_dat[key][3])/1000000
         # Reorder to: marker, chr, pos
         tmp_gmap = [map_dat[key][1], tmp_chr, map_dat[key][2]]
