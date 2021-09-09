@@ -130,8 +130,9 @@ GeneticMapPlotting <- function(dat, blxo, samp_name, out_dir) {
     }
     
     # Prepare chromosome labels
-    first_chr <- head(as.numeric(names(blxo)), n = 1)
-    last_chr <- tail(as.numeric(names(blxo)), n = 1)
+    chrom_vector <- as.vector(as.numeric(names(blxo)))
+    first_chr <- chrom_vector[1] # Pull first chromosome
+    last_chr <- chrom_vector[length(chrom_vector)] # Pull last chromosome
     # Genetic map - Plotting all chr for each individual
     lpallind_gmap <- ggplot(lxodf_gmap, aes(x=xo_pos, y=as.numeric(chr)))
     lpallind_gmap + geom_hline(yintercept = first_chr:last_chr, color = "grey") +
@@ -198,8 +199,9 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
     }
     
     # Prepare chromosome labels
-    first_chr <- head(as.numeric(names(blxo)), n = 1)
-    last_chr <- tail(as.numeric(names(blxo)), n = 1)
+    chrom_vector <- as.vector(as.numeric(names(blxo_phys)))
+    first_chr <- chrom_vector[1] # Pull first chromosome
+    last_chr <- chrom_vector[length(chrom_vector)] # Pull last chromosome
     # Physical map - Plotting all chr for each individual
     par(mfrow = c(1,1))
     lpallind <- ggplot(lxodf, aes(x=xo_pos, y=as.numeric(chr)))
