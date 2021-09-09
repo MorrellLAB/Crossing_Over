@@ -109,6 +109,7 @@ case "${ROUTINE}" in
         "${CROSSING_OVER}"/scripts/crossovers/rqtl2_xo_counts.sh \
             "${QTL_INPUTS_DIR}" \
             "${PERICENTROMERES}" \
+            "${USERDEF_ERR_PROB}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;

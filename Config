@@ -90,6 +90,10 @@ P2RQTL2_SUFFIX="_Mendel_fillIn.ped"
 #       The default path below will work assuming you used the directory output from the previous step in the pipeline and didn't rename it
 QTL_INPUTS_DIR="${OUT_DIR}/qtl2inputs"
 
+#   User defined error probability for R/qtl2
+#   Default: 0.002
+USERDEF_ERR_PROB="0.002"
+
 #   Full file path to the directory containing XO phenotypes
 XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
 
