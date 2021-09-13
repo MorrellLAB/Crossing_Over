@@ -9,8 +9,9 @@ set -o pipefail
 YAML_DIR=$(realpath "$1") # Containing yaml files corresponding to each family
 PCENT_FP="$2"
 USERDEF_ERR_PROB="$3"
-OUT_DIR="${4}/rqtl2"
-SCRIPT_DIR="$5"
+USERDEF_MAP_FN="$4"
+OUT_DIR="${5}/rqtl2"
+SCRIPT_DIR="$6"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
@@ -43,7 +44,8 @@ function xo_counts() {
     local yaml_file="$1"
     local pcent_file="$2"
     local userdef_err_prob="$3"
-    local out_dir="$4"
+    local userdef_map_fn="$4"
+    local out_dir="$5"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
     echo "Processing sample: ${name}..."
     # Run crossover analysis
@@ -51,6 +53,7 @@ function xo_counts() {
         "${yaml_file}" \
         "${pcent_file}" \
         "${userdef_err_prob}" \
+        "${userdef_map_fn}" \
         "${out_dir}" 2>&1 | tee "${out_dir}"/other_summaries/"${name}".log
 }
 
@@ -67,7 +70,7 @@ fi
 
 # Run program in parallel
 echo "Counting crossovers..."
-parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${OUT_DIR}" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${OUT_DIR}" :::: "${YAML_DIR}/all_yaml_files_list.txt"
 
 # Reorganize output files
 echo "Cleaning up intermediate files..."

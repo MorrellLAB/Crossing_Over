@@ -441,7 +441,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, out_dir) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -456,7 +456,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, out_dir) {
     # Error probability based on SNP array error rate
     # Reported in: https://www.nature.com/articles/nmeth842 (Steemers et al. 2006 Nature Methods)
     #bpr <- calc_genoprob(dat, error_prob=0.002, map_function="c-f", cores=0)
-    bpr <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function="c-f", cores=0)
+    bpr <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
     # Identify most probable genotype at each position then count exchanges
     bm <- maxmarg(bpr, minprob=0.95, cores=0)
     
@@ -559,7 +559,8 @@ Main <- function() {
     yaml_fp <- args[1]
     pcent_fp <- args[2]
     userdef_err_prob <- args[3]
-    out_dir <- args[4]
+    userdef_map_fn <- args[4]
+    out_dir <- args[5]
     
     # Read in files
     dat <- ReadFile(yaml_fp)
@@ -596,7 +597,7 @@ Main <- function() {
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, out_dir)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir)
     }
 }
 

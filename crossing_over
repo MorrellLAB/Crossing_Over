@@ -110,6 +110,7 @@ case "${ROUTINE}" in
             "${QTL_INPUTS_DIR}" \
             "${PERICENTROMERES}" \
             "${USERDEF_ERR_PROB}" \
+            "${USERDEF_MAP_FN}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;

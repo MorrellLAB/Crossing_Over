@@ -94,6 +94,11 @@ QTL_INPUTS_DIR="${OUT_DIR}/qtl2inputs"
 #   Default: 0.002
 USERDEF_ERR_PROB="0.002"
 
+#   User defined map function used when calculating genotype probabilities
+#   Default: "kosambi"
+#   Valid options: "haldane", "kosambi", "c-f", "morgan"
+USERDEF_MAP_FN="kosambi"
+
 #   Full file path to the directory containing XO phenotypes
 XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
 
