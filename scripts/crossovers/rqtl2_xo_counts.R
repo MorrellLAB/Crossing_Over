@@ -441,7 +441,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, udef_err_prob, out_dir) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, out_dir) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -456,7 +456,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, udef_err_prob, out_dir) {
     # Error probability based on SNP array error rate
     # Reported in: https://www.nature.com/articles/nmeth842 (Steemers et al. 2006 Nature Methods)
     #bpr <- calc_genoprob(dat, error_prob=0.002, map_function="c-f", cores=0)
-    bpr <- calc_genoprob(dat, error_prob=udef_err_prob, map_function="c-f", cores=0)
+    bpr <- calc_genoprob(dat, error_prob=userdef_err_prob, map_function="c-f", cores=0)
     # Identify most probable genotype at each position then count exchanges
     bm <- maxmarg(bpr, minprob=0.95, cores=0)
     

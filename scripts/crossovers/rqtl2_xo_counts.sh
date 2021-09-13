@@ -56,6 +56,14 @@ function xo_counts() {
 
 export -f xo_counts
 
+# Check that error probability is a single non-negative number
+if [[ "${USERDEF_ERR_PROB}" < 0 ]]; then
+    echo "User defined error probability is negative, please specify a non-negative number in the config file and re-run. Exiting..."
+    exit 1
+else
+    echo "User defined error probability is non-negative, proceeding to counting crossovers..."
+fi
+
 # Run program in parallel
 echo "Counting crossovers..."
 parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${OUT_DIR}" :::: "${YAML_DIR}/all_yaml_files_list.txt"
