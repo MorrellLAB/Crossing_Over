@@ -456,7 +456,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, out_dir) {
     # Error probability based on SNP array error rate
     # Reported in: https://www.nature.com/articles/nmeth842 (Steemers et al. 2006 Nature Methods)
     #bpr <- calc_genoprob(dat, error_prob=0.002, map_function="c-f", cores=0)
-    bpr <- calc_genoprob(dat, error_prob=userdef_err_prob, map_function="c-f", cores=0)
+    bpr <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function="c-f", cores=0)
     # Identify most probable genotype at each position then count exchanges
     bm <- maxmarg(bpr, minprob=0.95, cores=0)
     

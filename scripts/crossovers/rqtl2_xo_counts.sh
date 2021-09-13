@@ -61,6 +61,7 @@ if [[ "${USERDEF_ERR_PROB}" < 0 ]]; then
     echo "User defined error probability is negative, please specify a non-negative number in the config file and re-run. Exiting..."
     exit 1
 else
+    echo "User defined error probability is set to: ${USERDEF_ERR_PROB}"
     echo "User defined error probability is non-negative, proceeding to counting crossovers..."
 fi
 
