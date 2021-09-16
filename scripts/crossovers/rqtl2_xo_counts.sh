@@ -38,7 +38,9 @@ fi
 mkdir -p "${OUT_DIR}" \
          "${OUT_DIR}/genetic_map_plots" \
          "${OUT_DIR}/other_summaries" \
-         "${OUT_DIR}/physical_map_plots"
+         "${OUT_DIR}/physical_map_plots" \
+         "${OUT_DIR}/physical_map_plots_miss" \
+         "${OUT_DIR}/log_files"
 
 function xo_counts() {
     local yaml_file="$1"
@@ -46,7 +48,9 @@ function xo_counts() {
     local userdef_err_prob="$3"
     local userdef_map_fn="$4"
     local out_dir="$5"
+    local fam_log_dir="$6"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
+    printf "\n"
     echo "Processing sample: ${name}..."
     # Run crossover analysis
     rqtl2_xo_counts.R \
@@ -54,7 +58,8 @@ function xo_counts() {
         "${pcent_file}" \
         "${userdef_err_prob}" \
         "${userdef_map_fn}" \
-        "${out_dir}" 2>&1 | tee "${out_dir}"/other_summaries/"${name}".log
+        "${out_dir}" \
+        "${fam_log_dir}" 2>&1 | tee "${fam_log_dir}/${name}.log"
 }
 
 export -f xo_counts
@@ -69,8 +74,22 @@ else
 fi
 
 # Run program in parallel
+printf "\n"
+echo "##########################"
 echo "Counting crossovers..."
-parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${OUT_DIR}" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+
+# Print some file number summaries to help catch errors
+printf "\n"
+echo "##########################"
+echo "Printing some file number summaries to help detect errors/issues..."
+num_yaml_files=$(wc -l ${YAML_DIR}/all_yaml_files_list.txt)
+echo "Number of YAML files we started with (i.e., attempted to process): ${num_yaml_files}"
+num_phys_map_plots_miss=$(find ${OUT_DIR}/physical_map_plots_miss/pmap_by_chr -name "*.pdf" | wc -l)
+echo "Number of plots generated in ${OUT_DIR}/physical_map_plots_miss/pmap_by_chr directory: ${num_phys_map_plots_miss}"
+num_pheno_tables=$(find ${OUT_DIR}/phenotype_tables -name "*pheno.txt" | wc -l)
+echo "Number of phenotype tables output from script: ${num_pheno_tables}"
+echo "If no errors occurred, the number of phenotype tables should be the same as the number of YAML files we started with."
 
 # Reorganize output files
 echo "Cleaning up intermediate files..."

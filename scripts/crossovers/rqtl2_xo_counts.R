@@ -3,6 +3,7 @@
 # Usage:
 #   ./rqtl2_xo_counts.R [yaml_fp] [pcent_fp] [out_dir]
 
+# Dependencies
 suppressWarnings(suppressPackageStartupMessages(library(qtl2)))
 suppressWarnings(suppressPackageStartupMessages(library(broman)))
 suppressWarnings(suppressPackageStartupMessages(library(qtlcharts)))
@@ -249,6 +250,8 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
 # Find the 2 closest markers just upstream and downstream of the crossover
 # Function works on a chromosome by chromosome basis, and one xo position at a time
 ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_indv) {
+    # Keep track of check status
+    check_failed <- FALSE # Start with no issues for check status
     # Pull markers for current chromosome
     curr_markers <- marker_pos[marker_pos$chr == curr_chrom, ]
     # Calculate distances of markers from current xo position
@@ -264,10 +267,11 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the left of the current xo position
-        message("Edge case...")
-        message("Current individual, Current chromosome, Current XO position:")
-        message(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
-        stop("There is no marker position to the left of the current xo position.")
+        cat("Edge case...")
+        cat("Current individual, Current chromosome, Current XO position (Mb):")
+        cat(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
+        warning("There is no marker position to the left of the current xo position.")
+        check_failed <- TRUE # Edge case detected
     }
     # Get closest right flanking position
     if (any(sorted_curr_markers$pos > curr_xo_pos)) {
@@ -275,49 +279,60 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the right of the current xo position
-        message("Edge case...")
-        message("Current individual, Current chromosome, Current XO position:")
-        message(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
-        stop("There is no marker position to the right of the current xo position.")
+        cat("Edge case...")
+        cat("Current individual, Current chromosome, Current XO position (Mb):")
+        cat(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
+        warning("There is no marker position to the right of the current xo position.")
+        check_failed <- TRUE # Edge case detected
     }
     
     # Add check for cases where two or more markers have the same physical position.
+    #   Note: This seems to be an effect of R/qtl2 rounding physical positions in Mb to 7 sig figs
+    #   There may be a workaround or a custom setting for this, but currently
     # The user should pick the marker with the least amount of missing data as part of the data cleaning step
     if (length(left_pos$pos) > 1) {
-        message("Two or more markers have the same physical position.")
-        message("Current xo position:", curr_xo_pos)
-        message("Current chromosome:", curr_chrom)
-        message("Current individual:", curr_indv)
-        message("Current left positions processing:", left_pos)
-        stop("Please investigate before proceeding")
+        cat("Current xo position (Mb):", curr_xo_pos)
+        cat("Current chromosome:", curr_chrom)
+        cat("Current individual:", curr_indv)
+        cat("Current left positions processing:", left_pos)
+        warning("Two or more markers have the same physical position. Please investigate before proceeding.")
+        check_failed <- TRUE
     }
     
     if (length(right_pos$pos) > 1) {
-        message("Two or more markers have the same physical position. Please investigate.")
-        message("Current xo position:", curr_xo_pos)
-        message("Current chromosome:", curr_chrom)
-        message("Current individual:", curr_indv)
-        message("Current left positions processing:", left_pos)
-        stop("Please investigate before proceeding")
+        cat("Current xo position (Mb):", curr_xo_pos)
+        cat("Current chromosome:", curr_chrom)
+        cat("Current individual:", curr_indv)
+        cat("Current left positions processing:", left_pos)
+        warning("Two or more markers have the same physical position. Please investigate before proceeding")
+        check_failed <- TRUE
     }
     
     # Check that current xo position falls between closest markers
     # Left position should be smaller than current xo position
     if (left_pos$pos > curr_xo_pos) {
-        # If left position isn't smaller than curr_xo_pos, stop and return message
-        stop("Left flanking position > current crossover position, this isn't right. 
+        # If left position isn't smaller than curr_xo_pos, cat and return message
+        warning("Left flanking position > current crossover position, this isn't right. 
              Please investigate this more closely before proceeding.")
+        check_failed <- TRUE
     }
     # Right position should be greater than current xo position
     if (right_pos$pos < curr_xo_pos) {
-        # If right position isn't greater than curr_xo_pos, stop and return message
-        stop("Right flanking position < current crossover position, this isn't right.
+        # If right position isn't greater than curr_xo_pos, cat and return message
+        warning("Right flanking position < current crossover position, this isn't right.
              Please investigate this more closely before proceeding.")
+        check_failed <- TRUE
     }
     
-    # Combine closest markers into a single data frame
-    closest_markers <- rbind(left_pos, right_pos)
-    return(closest_markers)
+    if (check_failed == FALSE) {
+        # Combine closest markers into a single data frame
+        closest_markers <- rbind(left_pos, right_pos)
+        return(closest_markers)
+    } else {
+        closest_markers <- "check_failed"
+        return(closest_markers)
+        warning("At least one of our checks when detecting closes flanking markers failed, please investigate this set of XO positions/chromosome/individual.")
+    }
 }
 
 # Categorize closest markers as:
@@ -342,7 +357,7 @@ CategorizeMarkers <- function(closest_markers, curr_pcent) {
     return(df)
 }
 
-MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
+MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir, fam_log_file) {
     # Reformat physical positions
     marker_pos <- PullMarkerPhysPos(dat)
     
@@ -361,7 +376,7 @@ MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
                                      dimnames = list(NULL, c(pcolnames))))
     new_lxodf <- as.data.frame(matrix(nrow = 0, ncol = ncol(lxodf)))
     colnames(new_lxodf) <- colnames(lxodf)
-    
+
     for (i in unique(lxodf$ind)) {
         tmp_row <- c(i)
         for (chrom in 1:num_chr) {
@@ -375,26 +390,37 @@ MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir) {
             new_tmp_pchr <- c()
             curr_pcent <- pcent[pcent$chr == chrom, ] # pericentromere for current chromosome
             for (xopos in tmp_pchr) {
+                # Add error/message trapping, send output messages to log file
+                sink(fam_log_file, append = TRUE)
                 # Identify the nearest 2 markers to the xo location
-                closest_markers <- ClosestFlankingMarkers(marker_pos, curr_xo_pos=xopos, 
-                                                            curr_chrom=chrom, curr_indv = i)
-                # Categorize closest markers into LP, P, RP
-                marker_categories <- CategorizeMarkers(closest_markers, curr_pcent)
-                # If the two flanking markers for a xo position has the same pcent_cat, then
-                #   we are able to clearly place the xo on LP, P, or RP
-                # If the two flanking markers for a xo position don't have the same pcent_cat, then
-                #   the xo location is between two markers that span a breakpoint and can't be categorized
-                #   as LP, P, or RP with certainty. We'll set this to missing and not count this XO.
-                if (length(unique(sort(marker_categories$pcent_cat))) == 1) {
-                    # We are able to clearly place the xo on LP, P, or RP
-                    new_tmp_pchr <- c(new_tmp_pchr, xopos)
-                    # Get current row from lxodf data frame
-                    curr_lxodf_row <- lxodf[lxodf$ind == i & lxodf$chr == chrom & lxodf$xo_pos == xopos, ]
-                    # This will be used for plotting purposes after setting xo to missing
-                    new_lxodf <- rbind(new_lxodf, curr_lxodf_row)
+                closest_markers <- ClosestFlankingMarkers(marker_pos, curr_xo_pos=xopos,
+                                                      curr_chrom=chrom, curr_indv = i)
+                warnings() # print warnings that occurred
+                if (closest_markers != "check_failed") {
+                    # Categorize closest markers into LP, P, RP
+                    marker_categories <- CategorizeMarkers(closest_markers, curr_pcent)
+                    # If the two flanking markers for a xo position has the same pcent_cat, then
+                    #   we are able to clearly place the xo on LP, P, or RP
+                    # If the two flanking markers for a xo position don't have the same pcent_cat, then
+                    #   the xo location is between two markers that span a breakpoint and can't be categorized
+                    #   as LP, P, or RP with certainty. We'll set this to missing and not count this XO.
+                    if (length(unique(sort(marker_categories$pcent_cat))) == 1) {
+                        # We are able to clearly place the xo on LP, P, or RP
+                        new_tmp_pchr <- c(new_tmp_pchr, xopos)
+                        # Get current row from lxodf data frame
+                        curr_lxodf_row <- lxodf[lxodf$ind == i & lxodf$chr == chrom & lxodf$xo_pos == xopos, ]
+                        # This will be used for plotting purposes after setting xo to missing
+                        new_lxodf <- rbind(new_lxodf, curr_lxodf_row)
+                    }
+                } else {
+                    print("Either an edge case has been detected or an error has occurred.")
+                    print("We are currently processing the following:")
+                    cat("Current individual:", i, "\nCurrent chromosome:", chrom, "\nCurrent XO pos (Mb):", xopos)
+                    next
                 }
+                sink()
             }
-            
+
             # Get the start position of the pericentromere in Mbp
             pcent_start_Mb <- pcent[pcent$chr == chrom, ]$pstartMb
             # Get the end position of the pericentromere in Mbp
@@ -441,7 +467,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir, fam_log_file) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -494,7 +520,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     lxodf <- PhysicalMapPlotting(dat, blxo_phys, pcent, samp_name, out_dir_pmap)
     
     # Create and save phenotype table
-    pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir)
+    pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir, fam_log_file)
     pheno_df <- pheno_out_list[[1]]
     new_lxodf <- pheno_out_list[[2]]
     
@@ -561,6 +587,7 @@ Main <- function() {
     userdef_err_prob <- args[3]
     userdef_map_fn <- args[4]
     out_dir <- args[5]
+    fam_log_dir <- args[6]
     
     # Read in files
     dat <- ReadFile(yaml_fp)
@@ -573,9 +600,9 @@ Main <- function() {
     }
     checks <- check_cross2(dat)
     if (checks == TRUE) {
-        print("Everything is correct.")
+        print("Check for cross2 object passed, proceeding.")
     } else {
-        print("Check data.")
+        print("Please check data, the check for the cross2 object failed.")
     }
     # Omit markers without any genotype data or noninformative genotypes
     dat_omit_null <- drop_nullmarkers(dat)
@@ -583,7 +610,9 @@ Main <- function() {
     # Extract prefix from filename
     yaml_prefix <- basename(yaml_fp)
     samp_name <- sub(pattern = "_forqtl2.yaml", replacement = "", x = yaml_prefix)
-    
+    # Generate log file for current family/sample to store output messages
+    fam_log_file <- paste0(fam_log_dir, "/", samp_name, ".log")
+
     # We need a min of 3 markers per chr, otherwise rqtl2 will return error
     # Check for at least 3 markers per chr
     temp_summary <- summary(dat_omit_null)
@@ -597,7 +626,7 @@ Main <- function() {
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir, fam_log_file)
     }
 }
 
