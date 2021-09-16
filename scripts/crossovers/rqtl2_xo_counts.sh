@@ -90,6 +90,12 @@ echo "Number of plots generated in ${OUT_DIR}/physical_map_plots_miss/pmap_by_ch
 num_pheno_tables=$(find ${OUT_DIR}/phenotype_tables -name "*pheno.txt" | wc -l)
 echo "Number of phenotype tables output from script: ${num_pheno_tables}"
 echo "If no errors occurred, the number of phenotype tables should be the same as the number of YAML files we started with."
+echo "Identifying files where phenotype table did not get generated (likely due to errors)..."
+find ${OUT_DIR}/phenotype_tables -name "*pheno.txt" | sed -e "s,${OUT_DIR}/phenotype_tables/,," -e "s,_pheno.txt,," | sort -V > ${OUT_DIR}/log_files/temp_pheno_tables_names.txt
+sed -e "s,${YAML_DIR}/,," -e "s,_forqtl2.yaml,," ${YAML_DIR}/all_yaml_files_list.txt | sort -V > ${OUT_DIR}/log_files/temp_yaml_names.txt
+grep -vf ${OUT_DIR}/log_files/temp_pheno_tables_names.txt ${OUT_DIR}/log_files/temp_yaml_names.txt > ${OUT_DIR}/log_files/no_pheno_table_sample_names.txt
+echo "List of sample names where phenotype table did not get generated is located here: ${OUT_DIR}/log_files/no_pheno_table_sample_names.txt"
+echo "Log files are located at: ${OUT_DIR}/log_files"
 
 # Reorganize output files
 echo "Cleaning up intermediate files..."
