@@ -84,17 +84,17 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
     e <- calc_errorlod(dat, pr, cores=0)
     e <- do.call("cbind", e)
     errors_ind <- rowSums(e > error_lod_cutoff) / n_typed(dat)*100
-    labels <- paste0(names(errors_ind), " (", myround(percent_missing,1), "%)")
-    geno_err_lod_plot <- iplot(seq_along(errors_ind), errors_ind, indID=labels,
+    elabels <- paste0(names(errors_ind), " (", myround(percent_missing,1), "%)")
+    geno_err_lod_plot <- iplot(seq_along(errors_ind), errors_ind, indID=elabels,
       chartOpts=list(xlab="Individuals",
                      ylab="Percent genotyping errors", ylim=c(0, max(errors_ind)),
                      axispos=list(xtitle=25, ytitle=50, xlabel=5, ylabel=5)))
     # Save interactive plot to file
     htmlwidgets::saveWidget(geno_err_lod_plot, file=paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.html"))
     # Generate PDF version of plot
-    errors_ind_df <- data.frame(geno_err_rate=errors_ind, Percent_Missing=percent_missing, ind_labels=labels)
+    errors_ind_df <- data.frame(sampID=names(errors_ind), geno_err_rate=errors_ind, Percent_Missing_byInd=percent_missing, ind_labels=elabels)
     # Generate custom ggplot version
-    ggplot(errors_ind_df, aes(ind_labels, geno_err_rate, color=Percent_Missing)) +
+    ggplot(errors_ind_df, aes(ind_labels, geno_err_rate, color=Percent_Missing_byInd)) +
       geom_point() +
       scale_color_gradient(low="grey95", high="red") +
       theme_bw() +
@@ -109,10 +109,10 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
            device = "pdf",
            width = 30.50, height = 14, units = "in")
     # Save data to file
-    temp_df <- as.data.frame(errors_ind)
-    out_df <- data.frame(ind=rownames(temp_df), geno_err_rate=temp_df$errors_ind)
+    #temp_df <- as.data.frame(errors_ind)
+    #out_df <- data.frame(ind=rownames(temp_df), geno_err_rate=temp_df$errors_ind)
     write.table(
-        x = out_df,
+        x = errors_ind_df,
         file = paste0(out_dir_gerrlod_txt, "/", samp_name, "_geno_error_rates-LODcutoff_", error_lod_cutoff, ".txt"),
         quote = FALSE,
         sep = "\t",
