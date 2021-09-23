@@ -74,7 +74,7 @@ PlotMissing <- function(dat, samp_name, out_dir) {
     )
 }
 
-PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
+PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, out_dir) {
     # Prepare subdirectories
     out_dir_gerrlod_html <- PrepOutDir(out_dir, "genotyping_error_lod_plots")
     out_dir_gerrlod_txt <- PrepOutDir(out_dir, "genotyping_error_lod_data")
@@ -92,7 +92,7 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
     # Save interactive plot to file
     htmlwidgets::saveWidget(geno_err_lod_plot, file=paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.html"))
     # Generate PDF version of plot
-    errors_ind_df <- data.frame(sampID=names(errors_ind), geno_err_rate=errors_ind, Percent_Missing_byInd=percent_missing, ind_labels=elabels)
+    errors_ind_df <- data.frame(sampID=names(errors_ind), geno_err_rate=errors_ind, Percent_Missing_byInd=percent_missing, total_xo=btotxo_df$total_xo, ind_labels=elabels)
     # Generate custom ggplot version
     ggplot(errors_ind_df, aes(ind_labels, geno_err_rate, color=Percent_Missing_byInd)) +
       geom_point() +
@@ -108,6 +108,49 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
            plot = last_plot(),
            device = "pdf",
            width = 30.50, height = 14, units = "in")
+    
+    # Plot total XO count against percent missing
+    ggplot(errors_ind_df, aes(total_xo, Percent_Missing_byInd)) +
+      geom_point(alpha = 0.3) +
+      theme_bw() +
+      theme(axis.text.y = element_text(size = 9)) +
+      theme(axis.title = element_text(size = 18)) +
+      xlab("Total number XOs per individual") +
+      ylab("Percent missing per individual")
+    # Save plot to file
+    ggsave(filename = paste0(out_dir_gerrlod_html, "/", samp_name, "_total_xo_vs_percent_missing.pdf"),
+           plot = last_plot(),
+           device = "pdf",
+           width = 10, height = 10, units = "in")
+    
+    # Plot total XO count against genotype error rate
+    ggplot(errors_ind_df, aes(total_xo, geno_err_rate)) +
+      geom_point(alpha = 0.3) +
+      theme_bw() +
+      theme(axis.text.y = element_text(size = 9)) +
+      theme(axis.title = element_text(size = 18)) +
+      xlab("Total number XOs per individual") +
+      ylab("Percent genotyping errors per individual")
+    # Save plot to file
+    ggsave(filename = paste0(out_dir_gerrlod_html, "/", samp_name, "_total_xo_vs_geno_error_rates.pdf"),
+           plot = last_plot(),
+           device = "pdf",
+           width = 10, height = 10, units = "in")
+    
+    # Plot percent missing against genotype error rate
+    ggplot(errors_ind_df, aes(Percent_Missing_byInd, geno_err_rate)) +
+      geom_point(alpha = 0.3) +
+      theme_bw() +
+      theme(axis.text.y = element_text(size = 9)) +
+      theme(axis.title = element_text(size = 18)) +
+      xlab("Percent missing per individual") +
+      ylab("Percent genotyping errors per individual")
+    # Save plot to file
+    ggsave(filename = paste0(out_dir_gerrlod_html, "/", samp_name, "_percent_missing_vs_geno_error_rates.pdf"),
+           plot = last_plot(),
+           device = "pdf",
+           width = 10, height = 10, units = "in")
+    
     # Save data to file
     #temp_df <- as.data.frame(errors_ind)
     #out_df <- data.frame(ind=rownames(temp_df), geno_err_rate=temp_df$errors_ind)
@@ -118,6 +161,7 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
         sep = "\t",
         row.names = FALSE
     )
+    return(errors_ind_df)
 }
 
 PlotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
@@ -534,10 +578,6 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     #bm <- maxmarg(bpr, minprob=0.95, cores=0)
     bm <- maxmarg(bpr_clean, minprob=0.95, cores=0)
     
-    # As an added diagnostic/check if counts seem to be overestimated
-    #error_lod_cutoff <- 2
-    PlotGenoErrorLOD(dat, bpr_clean, samp_name, error_lod_cutoff, out_dir)
-    
     # Crossover counts
     # Returns counts of crossovers on each chromosome (as columns) in each individual
     bnxo <- count_xo(bm, cores=0)
@@ -554,6 +594,11 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     xo_count_df <- cbind(temp_out_df, bnxo)
     rownames(xo_count_df) <- c()
 
+    # As an added diagnostic/check if counts seem to be overestimated
+    #error_lod_cutoff <- 2
+    btotxo_df <- data.frame(sampID=names(btotxo), total_xo=btotxo)
+    errors_ind_df <- PlotGenoErrorLOD(dat, bpr_clean, samp_name, error_lod_cutoff, btotxo_df, out_dir)
+    
     # Plot of # of crossovers
     PlotNumXO(dat, btotxo, "Individuals", samp_name, out_dir)
     
