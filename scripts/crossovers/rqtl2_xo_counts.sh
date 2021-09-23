@@ -10,8 +10,9 @@ YAML_DIR=$(realpath "$1") # Containing yaml files corresponding to each family
 PCENT_FP="$2"
 USERDEF_ERR_PROB="$3"
 USERDEF_MAP_FN="$4"
-OUT_DIR="${5}/rqtl2"
-SCRIPT_DIR="$6"
+USERDEF_ERROR_LOD_CUTOFF="$5"
+OUT_DIR="${6}/rqtl2"
+SCRIPT_DIR="$7"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
@@ -47,8 +48,9 @@ function xo_counts() {
     local pcent_file="$2"
     local userdef_err_prob="$3"
     local userdef_map_fn="$4"
-    local out_dir="$5"
-    local fam_log_dir="$6"
+    local userdef_error_lod_cutoff="$5"
+    local out_dir="$6"
+    local fam_log_dir="$7"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
     printf "\n"
     echo "Processing sample: ${name}..."
@@ -58,6 +60,7 @@ function xo_counts() {
         "${pcent_file}" \
         "${userdef_err_prob}" \
         "${userdef_map_fn}" \
+        "${userdef_error_lod_cutoff}" \
         "${out_dir}" \
         "${fam_log_dir}" 2>&1 | tee "${fam_log_dir}/${name}.log"
 }
@@ -77,7 +80,7 @@ fi
 printf "\n"
 echo "##########################"
 echo "Counting crossovers..."
-parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${USERDEF_ERROR_LOD_CUTOFF}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
 
 # Print some file number summaries to help catch errors
 printf "\n"
@@ -102,4 +105,5 @@ echo "Cleaning up intermediate files..."
 # Cleanup intermediate files
 rm -rf "${OUT_DIR}"/percent_missing_interactive_plots/*_percent_missing_files
 rm -rf "${OUT_DIR}"/num_xo_interactive_plots/*_num_xo_files
+rm -rf "${OUT_DIR}"/genotyping_error_lod_plots/*_files
 echo "Done."

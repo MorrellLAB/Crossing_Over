@@ -74,6 +74,52 @@ PlotMissing <- function(dat, samp_name, out_dir) {
     )
 }
 
+PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, out_dir) {
+    # Prepare subdirectories
+    out_dir_gerrlod_html <- PrepOutDir(out_dir, "genotyping_error_lod_plots")
+    out_dir_gerrlod_txt <- PrepOutDir(out_dir, "genotyping_error_lod_data")
+    # Calcualte percent missing
+    percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
+    # Calculated error LOD scores (Rqtl2 implemented from Lincoln and Lander 1992)
+    e <- calc_errorlod(dat, pr, cores=0)
+    e <- do.call("cbind", e)
+    errors_ind <- rowSums(e > error_lod_cutoff) / n_typed(dat)*100
+    labels <- paste0(names(errors_ind), " (", myround(percent_missing,1), "%)")
+    geno_err_lod_plot <- iplot(seq_along(errors_ind), errors_ind, indID=labels,
+      chartOpts=list(xlab="Individuals",
+                     ylab="Percent genotyping errors", ylim=c(0, max(errors_ind)),
+                     axispos=list(xtitle=25, ytitle=50, xlabel=5, ylabel=5)))
+    # Save interactive plot to file
+    htmlwidgets::saveWidget(geno_err_lod_plot, file=paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.html"))
+    # Generate PDF version of plot
+    errors_ind_df <- data.frame(geno_err_rate=errors_ind, Percent_Missing=percent_missing, ind_labels=labels)
+    # Generate custom ggplot version
+    ggplot(errors_ind_df, aes(ind_labels, geno_err_rate, color=Percent_Missing)) +
+      geom_point() +
+      scale_color_gradient(low="grey95", high="red") +
+      theme_bw() +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
+      theme(axis.text.y = element_text(size = 9)) +
+      theme(axis.title = element_text(size = 18)) +
+      xlab("Individuals (percent missing)") +
+      ylab("Percent genotyping errors")
+    # Save plot to file
+    ggsave(filename = paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.pdf"),
+           plot = last_plot(),
+           device = "pdf",
+           width = 30.50, height = 14, units = "in")
+    # Save data to file
+    temp_df <- as.data.frame(errors_ind)
+    out_df <- data.frame(ind=rownames(temp_df), geno_err_rate=temp_df$errors_ind)
+    write.table(
+        x = out_df,
+        file = paste0(out_dir_gerrlod_txt, "/", samp_name, "_geno_error_rates-LODcutoff_", error_lod_cutoff, ".txt"),
+        quote = FALSE,
+        sep = "\t",
+        row.names = FALSE
+    )
+}
+
 PlotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
     percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
     numxo_plot <- iplot(seq_along(btotxo)[percent_missing < 19.97],
@@ -467,7 +513,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir, fam_log_file) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, out_dir, fam_log_file) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -483,8 +529,14 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     # Reported in: https://www.nature.com/articles/nmeth842 (Steemers et al. 2006 Nature Methods)
     #bpr <- calc_genoprob(dat, error_prob=0.002, map_function="c-f", cores=0)
     bpr <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
+    bpr_clean <- clean_genoprob(bpr, value_threshold=0.000001, column_threshold=0.01, cores=0)
     # Identify most probable genotype at each position then count exchanges
-    bm <- maxmarg(bpr, minprob=0.95, cores=0)
+    #bm <- maxmarg(bpr, minprob=0.95, cores=0)
+    bm <- maxmarg(bpr_clean, minprob=0.95, cores=0)
+    
+    # As an added diagnostic/check if counts seem to be overestimated
+    #error_lod_cutoff <- 2
+    PlotGenoErrorLOD(dat, bpr_clean, samp_name, error_lod_cutoff, out_dir)
     
     # Crossover counts
     # Returns counts of crossovers on each chromosome (as columns) in each individual
@@ -519,7 +571,7 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     out_dir_pmap <- PrepOutDir(out_dir, "physical_map_plots")
     lxodf <- PhysicalMapPlotting(dat, blxo_phys, pcent, samp_name, out_dir_pmap)
     
-    # Create and save phenotype table
+    # Create phenotype table
     pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir, fam_log_file)
     pheno_df <- pheno_out_list[[1]]
     new_lxodf <- pheno_out_list[[2]]
@@ -591,8 +643,9 @@ Main <- function() {
     pcent_fp <- args[2]
     userdef_err_prob <- args[3]
     userdef_map_fn <- args[4]
-    out_dir <- args[5]
-    fam_log_dir <- args[6]
+    error_lod_cutoff <- args[5]
+    out_dir <- args[6]
+    fam_log_dir <- args[7]
     
     # Read in files
     dat <- ReadFile(yaml_fp)
@@ -631,7 +684,7 @@ Main <- function() {
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, out_dir, fam_log_file)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, out_dir, fam_log_file)
     }
 }
 

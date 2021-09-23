@@ -95,12 +95,15 @@ case "${ROUTINE}" in
         echo "Run data diagnostic evaluation prior to generating crossover phenotypes..."
         echo "Please look closely at the summary plots and resolve any data issues before proceeding to next step."
         "${CROSSING_OVER}"/scripts/data_handling/data_diagnostics_rqtl.sh \
-            "${YAML_PREFIX}" \
+            "${DD_YAML_PREFIX}" \
             "${PROGENY_GENO_LIST}" \
             "${FOUNDER_GENO_LIST}" \
             "${GMAP_LIST}" \
             "${PMAP_LIST}" \
             "${CROSSTYPE}" \
+            "${DD_USER_DEF_ERR_PROB}" \
+            "${DD_USER_DEF_MAP_FN}" \
+            "${DD_ERR_LOD_CUTOFF}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
@@ -111,6 +114,7 @@ case "${ROUTINE}" in
             "${PERICENTROMERES}" \
             "${USERDEF_ERR_PROB}" \
             "${USERDEF_MAP_FN}" \
+            "${USERDEF_ERROR_LOD_CUTOFF}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;
