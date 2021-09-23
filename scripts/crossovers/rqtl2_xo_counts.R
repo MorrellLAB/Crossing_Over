@@ -453,11 +453,11 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     new_pheno_df <- cbind(new_pheno_df, sample_xo_total)
     
     for (c in 1:n_chrom) {
-        curr_chr <- paste0("chr", c)
+        curr_chr <- paste0("chr", c, "_")
         curr_chr_sum <- pheno_df %>% dplyr::select(starts_with(curr_chr)) %>%
             mutate_if(is.character, as.numeric) %>%
             mutate(chr_xo_count = rowSums(.))
-        colnames(curr_chr_sum)[4] <- paste0(curr_chr, "_total")
+        colnames(curr_chr_sum)[4] <- paste0(curr_chr, "total")
         # Add columns to new phenotype table
         new_pheno_df <- cbind(new_pheno_df, curr_chr_sum)
     }
@@ -560,12 +560,17 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     # After setting ambiguous crossovers to missing
     out_dir_miss <- PrepOutDir(out_dir, "physical_map_plots_miss")
     lxodf_miss <- PhysicalMapPlotting(dat, new_blxo_phys, pcent, samp_name, out_dir_miss)
+    # Create phenotype table
+    new_pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf_miss, pcent, samp_name, out_dir, fam_log_file)
+    new_pheno_df <- new_pheno_out_list[[1]]
+    new_lxodf_miss <- new_pheno_out_list[[2]]
     
     ############### Add feature ############### 
     # Combine total xo counts and xo counts by chr with pheno table
     # Since we want these counts after setting ambiguous crossovers to missing,
     #   we'll sum different cuts of the pheno_df data frame
-    new_pheno_df <- UpdateCounts(pheno_df, n_chrom)
+    #new_pheno_df <- UpdateCounts(pheno_df, n_chrom)
+    new_pheno_df <- UpdateCounts(new_pheno_df, n_chrom)
     ###########################################
     
     # Prepare subdirectories
