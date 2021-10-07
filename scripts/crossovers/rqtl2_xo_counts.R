@@ -74,25 +74,72 @@ PlotMissing <- function(dat, samp_name, out_dir) {
     )
 }
 
-PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, out_dir) {
+CalcGenoErrorLODAndPMiss <- function(dat, pr, samp_name, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir) {
     # Prepare subdirectories
-    out_dir_gerrlod_html <- PrepOutDir(out_dir, "genotyping_error_lod_plots")
-    out_dir_gerrlod_txt <- PrepOutDir(out_dir, "genotyping_error_lod_data")
-    # Calcualte percent missing
-    percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
+    out_dir_excluded_markers <- PrepOutDir(out_dir, "dropped_markers")
+    # Calculate error LOD scores in preparation for plotting and cleaning data
     # Calculated error LOD scores (Rqtl2 implemented from Lincoln and Lander 1992)
     e <- calc_errorlod(dat, pr, cores=0)
     e <- do.call("cbind", e)
+  
+    ### By individual
+    # Calculate the percent missing by individual
+    pmis_ind <- n_missing(dat, by = "individual", summary = "proportion")*100
     errors_ind <- rowSums(e > error_lod_cutoff) / n_typed(dat)*100
-    elabels <- paste0(names(errors_ind), " (", myround(percent_missing,1), "%)")
+    
+    ### By marker
+    # Look at genotyping errors by marker
+    errors_mar <- colSums(e > error_lod_cutoff) / n_typed(dat, "marker")*100
+    pmis_mar <- n_missing(dat, by = "marker", summary = "proportion")*100
+    
+    # Get names of markers to exclude based on genotype error rate cutoff
+    # and proportion missing cutoff
+    e_gt_exclude_markers <- errors_mar[errors_mar > emarker_gt_cutoff]
+    e_gt_exclude_marker_names <- names(e_gt_exclude_markers)
+    e_mis_exlude_markers <- pmis_mar[pmis_mar > pmis_marker_cutoff]
+    e_mis_exclude_marker_names <- names(e_mis_exlude_markers)
+    # Drop these markers from cross object
+    dat_rev_egt <- drop_markers(dat, e_gt_exclude_marker_names)
+    dat_rev_mis <- drop_markers(dat_rev_egt, e_mis_exclude_marker_names)
+    # Prepare data frames for writing to file
+    dropped_gt_mar_df <- data.frame(marker_name=names(e_gt_exclude_markers), geno_err_by_marker=e_gt_exclude_markers)
+    dropped_mis_mar_df <- data.frame(marker_name=names(e_mis_exlude_markers), pmiss_by_marker=e_mis_exlude_markers)
+    # Save dropped markers to a file
+    write.table(
+      x = dropped_gt_mar_df,
+      file = paste0(out_dir_excluded_markers, "/", samp_name, "_dropped_genoerr_byMarker-cutoff_", emarker_gt_cutoff, ".txt"),
+      quote = FALSE,
+      sep = "\t",
+      row.names = FALSE
+    )
+    write.table(
+      x = dropped_mis_mar_df,
+      file = paste0(out_dir_excluded_markers, "/", samp_name, "_dropped_pmiss_byMarker-cutoff_", pmis_marker_cutoff, ".txt"),
+      quote = FALSE,
+      sep = "\t",
+      row.names = FALSE
+    )
+    # Return multiple objects
+    outputs <- list(dat_rev_mis, e, pmis_ind, errors_ind, errors_mar, pmis_mar)
+    return(outputs)
+}
+
+PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, errors_ind, pmis_ind, errors_mar, pmis_mar, out_dir) {
+    # Prepare subdirectories
+    out_dir_gerrlod_html <- PrepOutDir(out_dir, "genotyping_error_lod_plots_byInd")
+    out_dir_gerrlod_txt <- PrepOutDir(out_dir, "genotyping_error_lod_data_byInd")
+    out_dir_gerrlod_mis <- PrepOutDir(out_dir, "genotyping_error_lod_plots_byMarker")
+    
+    ### By individual
+    elabels <- paste0(names(errors_ind), " (", myround(pmis_ind,1), "%)")
     geno_err_lod_plot <- iplot(seq_along(errors_ind), errors_ind, indID=elabels,
       chartOpts=list(xlab="Individuals",
-                     ylab="Percent genotyping errors", ylim=c(0, max(errors_ind)),
+                     ylab="Percent genotyping errors (by individual)", ylim=c(0, max(errors_ind)),
                      axispos=list(xtitle=25, ytitle=50, xlabel=5, ylabel=5)))
     # Save interactive plot to file
     htmlwidgets::saveWidget(geno_err_lod_plot, file=paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.html"))
     # Generate PDF version of plot
-    errors_ind_df <- data.frame(sampID=names(errors_ind), geno_err_rate=errors_ind, Percent_Missing_byInd=percent_missing, total_xo=btotxo_df$total_xo, ind_labels=elabels)
+    errors_ind_df <- data.frame(sampID=names(errors_ind), geno_err_rate=errors_ind, Percent_Missing_byInd=pmis_ind, total_xo=btotxo_df$total_xo, ind_labels=elabels)
     # Generate custom ggplot version
     ggplot(errors_ind_df, aes(ind_labels, geno_err_rate, color=Percent_Missing_byInd)) +
       geom_point() +
@@ -102,7 +149,7 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, ou
       theme(axis.text.y = element_text(size = 9)) +
       theme(axis.title = element_text(size = 18)) +
       xlab("Individuals (percent missing)") +
-      ylab("Percent genotyping errors")
+      ylab("Percent genotyping errors (by individual)")
     # Save plot to file
     ggsave(filename = paste0(out_dir_gerrlod_html, "/", samp_name, "_geno_error_rates_and_percent_missing.pdf"),
            plot = last_plot(),
@@ -152,8 +199,6 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, ou
            width = 10, height = 10, units = "in")
     
     # Save data to file
-    #temp_df <- as.data.frame(errors_ind)
-    #out_df <- data.frame(ind=rownames(temp_df), geno_err_rate=temp_df$errors_ind)
     write.table(
         x = errors_ind_df,
         file = paste0(out_dir_gerrlod_txt, "/", samp_name, "_geno_error_rates-LODcutoff_", error_lod_cutoff, ".txt"),
@@ -161,7 +206,22 @@ PlotGenoErrorLOD <- function(dat, pr, samp_name, error_lod_cutoff, btotxo_df, ou
         sep = "\t",
         row.names = FALSE
     )
-    return(errors_ind_df)
+    
+    ### By markers (before any markers are dropped)
+    # Look at genotyping errors by marker
+    # Plot proportion missing by proportion genotyping errors
+    pdf(paste0(out_dir_gerrlod_mis, "/", samp_name, "_pmiss_by_pgenoerr_byMarker.pdf"))
+    grayplot(pmis_mar, errors_mar,
+             xlab="Proportion missing (by marker)", ylab="Proportion genotyping errors (by marker)",
+             main=samp_name)
+    dev.off()
+    # Plot proportion missing genotypes by marker
+    pdf(paste0(out_dir_gerrlod_mis, "/", samp_name, "_pmiss_byMarker.pdf"))
+    par(mar=c(5.1,0.6,1.5, 0.6))
+    hist(pmis_mar, breaks=seq(0, 100, length=201),
+         main=samp_name, yaxt="n", ylab="", xlab="Percent missing genotypes (by marker)")
+    rug(pmis_mar)
+    dev.off()
 }
 
 PlotNumXO <- function(dat, btotxo, xaxis_title, samp_name, out_dir) {
@@ -557,7 +617,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, out_dir, fam_log_file) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -571,14 +631,45 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     # Calculate genotype probabilities first
     # Error probability based on SNP array error rate
     # Reported in: https://www.nature.com/articles/nmeth842 (Steemers et al. 2006 Nature Methods)
-    #bpr <- calc_genoprob(dat, error_prob=0.002, map_function="c-f", cores=0)
-    bpr <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
+    bpr_start <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
+    bpr_start_clean <- clean_genoprob(bpr_start, value_threshold=0.000001, column_threshold=0.01, cores=0)
+    # Identify most probable genotype at each position then count exchanges
+    bm_start <- maxmarg(bpr_start_clean, minprob=0.95, cores=0)
+    
+    # Calculate genotype error LOD scores and drop markers that have genotyping error rates
+    # above the cutoff and markers that have proportion missing above the cutoff
+    # This also serves as an added diagnostic/check if counts seem to be overestimated
+    genoerr_outputs_list <- CalcGenoErrorLODAndPMiss(dat, bpr_start_clean, samp_name, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir)
+    # Pull out objects from list of objects
+    dat_rev <- genoerr_outputs_list[[1]]
+    e <- genoerr_outputs_list[[2]]
+    pmis_ind <- genoerr_outputs_list[[3]]
+    errors_ind <- genoerr_outputs_list[[4]]
+    errors_mar <- genoerr_outputs_list[[5]]
+    pmis_mar <- genoerr_outputs_list[[6]]
+    
+    # Crossover counts (before dropping markers)
+    # Returns counts of crossovers on each chromosome (as columns) in each individual
+    bnxo_start <- count_xo(bm_start, cores=0)
+    # Generate column names for per chr xo count
+    bnxo_start_colnames <- gsub(pattern="^", replacement="chr", x=colnames(bnxo_start))
+    colnames(bnxo_start) <- bnxo_start_colnames
+    # Sum each row to get genome-wide estimates of total numbers of crossovers
+    btotxo_start <- rowSums(bnxo_start)
+    # Prep to save # of crossovers data to file
+    temp_start_df <- as.data.frame(btotxo_start)
+    btotxo_start_df <- data.frame(sampID=rownames(temp_start_df), total_xo=temp_start_df$btotxo_start)
+    xo_count_start_df <- cbind(btotxo_start_df, bnxo_start)
+    rownames(xo_count_start_df) <- c()
+    
+    # Re-calculate genotype probabilities after dropping markers based on user specified cutoffs
+    bpr <- calc_genoprob(dat_rev, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
     bpr_clean <- clean_genoprob(bpr, value_threshold=0.000001, column_threshold=0.01, cores=0)
     # Identify most probable genotype at each position then count exchanges
     #bm <- maxmarg(bpr, minprob=0.95, cores=0)
     bm <- maxmarg(bpr_clean, minprob=0.95, cores=0)
     
-    # Crossover counts
+    # Crossover counts (after dropping markers)
     # Returns counts of crossovers on each chromosome (as columns) in each individual
     bnxo <- count_xo(bm, cores=0)
     # Generate column names for per chr xo count
@@ -586,38 +677,38 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     colnames(bnxo) <- bnxo_colnames
     # Sum each row to get genome-wide estimates of total numbers of crossovers
     btotxo <- rowSums(bnxo)
-    # Save # of crossovers data to file
-    #percent_missing <- n_missing(dat, by = "individual", summary = "proportion")*100
-    #temp_btotxo_pm <- btotxo[percent_missing < 19.97]
+    # Prep to save # of crossovers data to file
     temp_df <- as.data.frame(btotxo)
-    temp_out_df <- data.frame(sampleID=rownames(temp_df), total_xo=temp_df$btotxo)
-    xo_count_df <- cbind(temp_out_df, bnxo)
+    btotxo_df <- data.frame(sampID=rownames(temp_df), total_xo=temp_df$btotxo)
+    xo_count_df <- cbind(btotxo_df, bnxo)
     rownames(xo_count_df) <- c()
+    #btotxo_df <- data.frame(sampID=names(btotxo), total_xo=btotxo)
 
     # As an added diagnostic/check if counts seem to be overestimated
-    #error_lod_cutoff <- 2
-    btotxo_df <- data.frame(sampID=names(btotxo), total_xo=btotxo)
-    errors_ind_df <- PlotGenoErrorLOD(dat, bpr_clean, samp_name, error_lod_cutoff, btotxo_df, out_dir)
+    # Generate plots to summarize genotype error LOD scores and proportion missing
+    # Plots both by individuals and by markers (before dropping markers)
+    out_dir_start <- PrepOutDir(out_dir, "genotyping_error_lod_beforeFilt")
+    PlotGenoErrorLOD(dat, bpr_start_clean, samp_name, error_lod_cutoff, btotxo_start_df, errors_ind, pmis_ind, errors_mar, pmis_mar, out_dir_start)
     
     # Plot of # of crossovers
-    PlotNumXO(dat, btotxo, "Individuals", samp_name, out_dir)
+    PlotNumXO(dat_rev, btotxo, "Individuals", samp_name, out_dir)
     
     # Locate crossovers
-    blxo <- locate_xo(bm, map = dat$gmap, cores = 0)
+    blxo <- locate_xo(bm, map = dat_rev$gmap, cores = 0)
     # Try using physical map
-    blxo_phys <- locate_xo(bm, map = dat$pmap, cores = 0)
+    blxo_phys <- locate_xo(bm, map = dat_rev$pmap, cores = 0)
     
     # Make crossover plots
     # Genetic map plot
     out_dir_gmap <- PrepOutDir(out_dir, "genetic_map_plots")
     out_dir_gmap <- paste0(out_dir, "/genetic_map_plots", sep = '')
-    GeneticMapPlotting(dat, blxo, samp_name, out_dir_gmap)
+    GeneticMapPlotting(dat_rev, blxo, samp_name, out_dir_gmap)
     # Physical map plot
     out_dir_pmap <- PrepOutDir(out_dir, "physical_map_plots")
-    lxodf <- PhysicalMapPlotting(dat, blxo_phys, pcent, samp_name, out_dir_pmap)
+    lxodf <- PhysicalMapPlotting(dat_rev, blxo_phys, pcent, samp_name, out_dir_pmap)
     
     # Create phenotype table
-    pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir, fam_log_file)
+    pheno_out_list <- MakePhenoTable(dat_rev, num_chr = n_chrom, lxodf, pcent, samp_name, out_dir, fam_log_file)
     pheno_df <- pheno_out_list[[1]]
     new_lxodf <- pheno_out_list[[2]]
     
@@ -656,9 +747,9 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     # Physical map plot
     # After setting ambiguous crossovers to missing
     out_dir_miss <- PrepOutDir(out_dir, "physical_map_plots_miss")
-    lxodf_miss <- PhysicalMapPlotting(dat, new_blxo_phys, pcent, samp_name, out_dir_miss)
+    lxodf_miss <- PhysicalMapPlotting(dat_rev, new_blxo_phys, pcent, samp_name, out_dir_miss)
     # Create phenotype table
-    new_pheno_out_list <- MakePhenoTable(dat, num_chr = n_chrom, lxodf_miss, pcent, samp_name, out_dir, fam_log_file)
+    new_pheno_out_list <- MakePhenoTable(dat_rev, num_chr = n_chrom, lxodf_miss, pcent, samp_name, out_dir, fam_log_file)
     new_pheno_df <- new_pheno_out_list[[1]]
     new_lxodf_miss <- new_pheno_out_list[[2]]
     
@@ -689,8 +780,10 @@ Main <- function() {
     userdef_err_prob <- args[3]
     userdef_map_fn <- args[4]
     error_lod_cutoff <- args[5]
-    out_dir <- args[6]
-    fam_log_dir <- args[7]
+    emarker_gt_cutoff <- as.numeric(args[6])
+    pmis_marker_cutoff <- as.numeric(args[7])
+    out_dir <- args[8]
+    fam_log_dir <- args[9]
     
     # Read in files
     dat <- ReadFile(yaml_fp)
@@ -729,7 +822,7 @@ Main <- function() {
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, out_dir, fam_log_file)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file)
     }
 }
 

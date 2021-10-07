@@ -115,6 +115,16 @@ USERDEF_ERROR_LOD_CUTOFF="2"
 #   Valid options: "haldane", "kosambi", "c-f", "morgan"
 USERDEF_MAP_FN="kosambi"
 
+#   User defined cutoff for percent genotyping errors per marker
+#   Valid numbers range between 0 and 100
+#   Default: "5"
+USERDEF_PGENO_ERR_CUTOFF="5"
+
+#   User defined cutoff for percent missing per marker
+#   Valid numbers range between 0 and 100
+#   Default: "5"
+USERDEF_PMISS_CUTOFF="5"
+
 #   Full file path to the directory containing XO phenotypes
 XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
 

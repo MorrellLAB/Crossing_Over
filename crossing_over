@@ -115,6 +115,8 @@ case "${ROUTINE}" in
             "${USERDEF_ERR_PROB}" \
             "${USERDEF_MAP_FN}" \
             "${USERDEF_ERROR_LOD_CUTOFF}" \
+            "${USERDEF_PGENO_ERR_CUTOFF}" \
+            "${USERDEF_PMISS_CUTOFF}" \
             "${OUT_DIR}" \
             "${CROSSING_OVER}"
     ;;

@@ -11,8 +11,10 @@ PCENT_FP="$2"
 USERDEF_ERR_PROB="$3"
 USERDEF_MAP_FN="$4"
 USERDEF_ERROR_LOD_CUTOFF="$5"
-OUT_DIR="${6}/rqtl2"
-SCRIPT_DIR="$7"
+USERDEF_PGENO_ERR_CUTOFF="$6"
+USERDEF_PMISS_CUTOFF="$7"
+OUT_DIR="${8}/rqtl2"
+SCRIPT_DIR="$9"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
@@ -49,8 +51,10 @@ function xo_counts() {
     local userdef_err_prob="$3"
     local userdef_map_fn="$4"
     local userdef_error_lod_cutoff="$5"
-    local out_dir="$6"
-    local fam_log_dir="$7"
+    local userdef_pgeno_err_cutoff="$6"
+    local userdef_pmiss_cutoff="$7"
+    local out_dir="$8"
+    local fam_log_dir="$9"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
     printf "\n"
     echo "Processing sample: ${name}..."
@@ -61,6 +65,8 @@ function xo_counts() {
         "${userdef_err_prob}" \
         "${userdef_map_fn}" \
         "${userdef_error_lod_cutoff}" \
+        "${userdef_pgeno_err_cutoff}" \
+        "${userdef_pmiss_cutoff}" \
         "${out_dir}" \
         "${fam_log_dir}" 2>&1 | tee "${fam_log_dir}/${name}.log"
 }
@@ -80,7 +86,7 @@ fi
 printf "\n"
 echo "##########################"
 echo "Counting crossovers..."
-parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${USERDEF_ERROR_LOD_CUTOFF}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${USERDEF_ERROR_LOD_CUTOFF}" "${USERDEF_PGENO_ERR_CUTOFF}" "${USERDEF_PMISS_CUTOFF}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
 
 # Print some file number summaries to help catch errors
 printf "\n"
