@@ -47,7 +47,8 @@ if (cross_type == "f2") {
         founder_geno_file = founder_geno_files,
         gmap_file = gmap_files,
         pmap_file = pmap_files,
-        geno_codes = list(AA=1, AB=2, BA=2, BB=3),
+        alleles = c("A", "B"),
+        geno_codes = c(AA=1, AB=2, BB=3),
         na.strings = "NA",
         overwrite = TRUE
     )
@@ -59,7 +60,9 @@ if (cross_type == "f2") {
         founder_geno_file = founder_geno_files,
         gmap_file = gmap_files,
         pmap_file = pmap_files,
-        geno_codes = list(AA=1, BB=2),
+        alleles = c("A", "B"),
+        #geno_codes = list(AA=1, BB=2),
+        geno_codes = c(AA=1, BB=2),
         na.strings = "NA",
         overwrite = TRUE
     )
