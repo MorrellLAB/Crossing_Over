@@ -667,7 +667,6 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     btotxo_df <- data.frame(sampID=rownames(temp_df), total_xo=temp_df$btotxo)
     xo_count_df <- cbind(btotxo_df, bnxo)
     rownames(xo_count_df) <- c()
-    #btotxo_df <- data.frame(sampID=names(btotxo), total_xo=btotxo)
 
     # As an added diagnostic/check if counts seem to be overestimated
     # Generate plots to summarize genotype error LOD scores and proportion missing
@@ -718,10 +717,12 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
                     }
                     # Reassign vector of xo positions to new_blxo_phys
                     new_blxo_phys[[chr]][[indv]] <- tmp_xo_pos
+                } else if (nrow(curr_new_lxodf) == 0) {
+                  tmp_xo_pos <- numeric(0)
                 }
             } else if (chr %notin% curr_indv$chr) {
                 # Remove xo position set to missing from blxo_phys
-                tmp_xo_pos <- c()
+                tmp_xo_pos <- numeric(0)
                 # Reassign vector of xo positions to new_blxo_phys
                 new_blxo_phys[[chr]][[indv]] <- tmp_xo_pos
             }
