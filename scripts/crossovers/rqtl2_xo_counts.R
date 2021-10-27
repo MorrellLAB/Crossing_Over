@@ -400,8 +400,6 @@ PhysicalMapPlotting <- function(dat, blxo_phys, pcent, samp_name, out_dir) {
 # Find the 2 closest markers just upstream and downstream of the crossover
 # Function works on a chromosome by chromosome basis, and one xo position at a time
 ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_indv) {
-    # Keep track of check status
-    check_failed <- FALSE # Start with no issues for check status
     # Pull markers for current chromosome
     curr_markers <- marker_pos[marker_pos$chr == curr_chrom, ]
     # Calculate distances of markers from current xo position
@@ -417,11 +415,10 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the left of the current xo position
-        cat("Edge case...")
-        cat("Current individual, Current chromosome, Current XO position (Mb):")
-        cat(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
-        warning("There is no marker position to the left of the current xo position.")
-        check_failed <- TRUE # Edge case detected
+        warning("Edge case... There is no marker position to the left of the current xo position.")
+        warning("Current individual: ", curr_indv, "\n",
+              "Current chromosome: ", as.character(curr_chrom), "\n",
+              "Current XO position (Mb): ", curr_xo_pos, "\n")
     }
     # Get closest right flanking position
     if (any(sorted_curr_markers$pos > curr_xo_pos)) {
@@ -429,11 +426,10 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
     } else {
         # We don't have a marker position to the right of the current xo position
-        cat("Edge case...")
-        cat("Current individual, Current chromosome, Current XO position (Mb):")
-        cat(c(curr_indv, as.character(curr_chrom), curr_xo_pos))
-        warning("There is no marker position to the right of the current xo position.")
-        check_failed <- TRUE # Edge case detected
+        warning("Edge case... There is no marker position to the right of the current xo position.")
+        warning("Current individual: ", curr_indv, "\n",
+                "Current chromosome: ", as.character(curr_chrom), "\n",
+                "Current XO position (Mb): ", curr_xo_pos, "\n")
     }
     
     # Add check for cases where two or more markers have the same physical position.
@@ -441,47 +437,36 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
     #   There may be a workaround or a custom setting for this, but currently
     # The user should pick the marker with the least amount of missing data as part of the data cleaning step
     if (length(left_pos$pos) > 1) {
-        cat("Current xo position (Mb):", curr_xo_pos)
-        cat("Current chromosome:", curr_chrom)
-        cat("Current individual:", curr_indv)
-        cat("Current left positions processing:", left_pos)
-        warning("Two or more markers have the same physical position. Please investigate before proceeding.")
-        check_failed <- TRUE
+        warning("Edge case... Two or more markers have the same physical position. Please investigate before proceeding.")
+        warning("Current individual: ", curr_indv, "\n",
+                "Current chromosome: ", as.character(curr_chrom), "\n",
+                "Current XO position (Mb): ", curr_xo_pos, "\n",
+                "Current left positions processing:", left_pos, "\n")
     }
     
     if (length(right_pos$pos) > 1) {
-        cat("Current xo position (Mb):", curr_xo_pos)
-        cat("Current chromosome:", curr_chrom)
-        cat("Current individual:", curr_indv)
-        cat("Current left positions processing:", left_pos)
-        warning("Two or more markers have the same physical position. Please investigate before proceeding")
-        check_failed <- TRUE
+        warning("Edge case... Two or more markers have the same physical position. Please investigate before proceeding")
+        warning("Current individual: ", curr_indv, "\n",
+                "Current chromosome: ", as.character(curr_chrom), "\n",
+                "Current XO position (Mb): ", curr_xo_pos, "\n",
+                "Current left positions processing:", right_pos, "\n")
     }
     
+    # Check that there is only one left or right position
+    if (nrow(left_pos) == 1 && nrow(right_pos) == 1) {
     # Check that current xo position falls between closest markers
     # Left position should be smaller than current xo position
-    if (left_pos$pos > curr_xo_pos) {
-        # If left position isn't smaller than curr_xo_pos, cat and return message
-        warning("Left flanking position > current crossover position, this isn't right. 
-             Please investigate this more closely before proceeding.")
-        check_failed <- TRUE
-    }
-    # Right position should be greater than current xo position
-    if (right_pos$pos < curr_xo_pos) {
-        # If right position isn't greater than curr_xo_pos, cat and return message
-        warning("Right flanking position < current crossover position, this isn't right.
-             Please investigate this more closely before proceeding.")
-        check_failed <- TRUE
-    }
-    
-    if (check_failed == FALSE) {
+      if (left_pos$pos < curr_xo_pos && right_pos$pos > curr_xo_pos) {
+        # Everything is as expected, proceed
         # Combine closest markers into a single data frame
         closest_markers <- rbind(left_pos, right_pos)
         return(closest_markers)
     } else {
-        closest_markers <- "check_failed"
+        warning("Either the left flanking position > current crossover position and/or the right flanking 
+        position < current crossover position, this isn't right. Please investigate this more closely 
+                before proceeding.")
         return(closest_markers)
-        warning("At least one of our checks when detecting closes flanking markers failed, please investigate this set of XO positions/chromosome/individual.")
+      }
     }
 }
 
@@ -545,8 +530,7 @@ MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir, fam_l
                 # Identify the nearest 2 markers to the xo location
                 closest_markers <- ClosestFlankingMarkers(marker_pos, curr_xo_pos=xopos,
                                                       curr_chrom=chrom, curr_indv = i)
-                warnings() # print warnings that occurred
-                if (closest_markers != "check_failed") {
+                if (nrow(closest_markers) == 2) {
                     # Categorize closest markers into LP, P, RP
                     marker_categories <- CategorizeMarkers(closest_markers, curr_pcent)
                     # If the two flanking markers for a xo position has the same pcent_cat, then
@@ -562,10 +546,11 @@ MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir, fam_l
                         # This will be used for plotting purposes after setting xo to missing
                         new_lxodf <- rbind(new_lxodf, curr_lxodf_row)
                     }
-                } else {
-                    print("Either an edge case has been detected or an error has occurred.")
-                    print("We are currently processing the following:")
-                    cat("Current individual:", i, "\nCurrent chromosome:", chrom, "\nCurrent XO pos (Mb):", xopos)
+                } else if (nrow(closest_markers) != 2) {
+                  cat("Ind:", i, "Chrom:", chrom, "Curr_XO_pos", xopos, "\n") # For debugging purposes
+                  print(closest_markers)
+                  warning("Something went wrong when identifying the nearest 2 markers to the xo location.
+                           Please investigate this set of XO positions/chromosome/individual.")
                     next
                 }
                 sink()
