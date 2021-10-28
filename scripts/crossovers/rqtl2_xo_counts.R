@@ -410,27 +410,33 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
     # Get closest left flanking position
     # Note: may need to deal with case where marker  has the same position as the xo position
     #   although, I'm not sure if rqtl2 actually allows this case when inferring crossovers
-    if (any(sorted_curr_markers$pos < curr_xo_pos)) {
-        left_of_xo <- sorted_curr_markers[sorted_curr_markers$pos < curr_xo_pos, ]
-        left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
-    } else {
-        # We don't have a marker position to the left of the current xo position
-        warning("Edge case... There is no marker position to the left of the current xo position.")
-        warning("Current individual: ", curr_indv, "\n",
-              "Current chromosome: ", as.character(curr_chrom), "\n",
-              "Current XO position (Mb): ", curr_xo_pos, "\n")
-    }
-    # Get closest right flanking position
-    if (any(sorted_curr_markers$pos > curr_xo_pos)) {
-        right_of_xo <- sorted_curr_markers[sorted_curr_markers$pos > curr_xo_pos, ]
-        right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
-    } else {
-        # We don't have a marker position to the right of the current xo position
-        warning("Edge case... There is no marker position to the right of the current xo position.")
-        warning("Current individual: ", curr_indv, "\n",
-                "Current chromosome: ", as.character(curr_chrom), "\n",
-                "Current XO position (Mb): ", curr_xo_pos, "\n")
-    }
+    left_of_xo <- sorted_curr_markers[sorted_curr_markers$pos < curr_xo_pos, ]
+    left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
+    
+    right_of_xo <- sorted_curr_markers[sorted_curr_markers$pos > curr_xo_pos, ]
+    right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
+    
+    # if (any(sorted_curr_markers$pos < curr_xo_pos)) {
+    #     left_of_xo <- sorted_curr_markers[sorted_curr_markers$pos < curr_xo_pos, ]
+    #     left_pos <- left_of_xo[which(left_of_xo$curr_xo_dist == min(left_of_xo$curr_xo_dist)), ]
+    # } else {
+    #     # We don't have a marker position to the left of the current xo position
+    #     warning("Edge case... There is no marker position to the left of the current xo position.")
+    #     warning("Current individual: ", curr_indv, "\n",
+    #           "Current chromosome: ", as.character(curr_chrom), "\n",
+    #           "Current XO position (Mb): ", curr_xo_pos, "\n")
+    # }
+    # # Get closest right flanking position
+    # if (any(sorted_curr_markers$pos > curr_xo_pos)) {
+    #     right_of_xo <- sorted_curr_markers[sorted_curr_markers$pos > curr_xo_pos, ]
+    #     right_pos <- right_of_xo[which(right_of_xo$curr_xo_dist == min(right_of_xo$curr_xo_dist)), ]
+    # } else {
+    #     # We don't have a marker position to the right of the current xo position
+    #     warning("Edge case... There is no marker position to the right of the current xo position.")
+    #     warning("Current individual: ", curr_indv, "\n",
+    #             "Current chromosome: ", as.character(curr_chrom), "\n",
+    #             "Current XO position (Mb): ", curr_xo_pos, "\n")
+    # }
     
     # Add check for cases where two or more markers have the same physical position.
     #   Note: This seems to be an effect of R/qtl2 rounding physical positions in Mb to 7 sig figs
@@ -465,7 +471,6 @@ ClosestFlankingMarkers <- function(marker_pos, curr_xo_pos, curr_chrom, curr_ind
         warning("Either the left flanking position > current crossover position and/or the right flanking 
         position < current crossover position, this isn't right. Please investigate this more closely 
                 before proceeding.")
-        return(closest_markers)
       }
     }
 }
@@ -547,10 +552,9 @@ MakePhenoTable <- function(dat, num_chr, lxodf, pcent, samp_name, out_dir, fam_l
                         new_lxodf <- rbind(new_lxodf, curr_lxodf_row)
                     }
                 } else if (nrow(closest_markers) != 2) {
-                  cat("Ind:", i, "Chrom:", chrom, "Curr_XO_pos", xopos, "\n") # For debugging purposes
-                  print(closest_markers)
-                  warning("Something went wrong when identifying the nearest 2 markers to the xo location.
+                    warning("Something went wrong when identifying the nearest 2 markers to the xo location.
                            Please investigate this set of XO positions/chromosome/individual.")
+                    warning("Ind:", i, "Chrom:", chrom, "Curr_XO_pos", xopos, "\n") # For debugging purposes
                     next
                 }
                 sink()
@@ -739,13 +743,11 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     new_pheno_df <- new_pheno_out_list[[1]]
     new_lxodf_miss <- new_pheno_out_list[[2]]
     
-    ############### Add feature ############### 
     # Combine total xo counts and xo counts by chr with pheno table
     # Since we want these counts after setting ambiguous crossovers to missing,
     #   we'll sum different cuts of the pheno_df data frame
     #new_pheno_df <- UpdateCounts(pheno_df, n_chrom)
     new_pheno_df <- UpdateCounts(new_pheno_df, n_chrom)
-    ###########################################
     
     # Prepare subdirectories
     out_dir_pheno <- PrepOutDir(out_dir, "phenotype_tables")
