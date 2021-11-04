@@ -27,11 +27,23 @@ do
     cat $i | tail -n +2 >> ${XO_DATA_DIR}/all_families_pheno_xo.txt
 done
 
+# Only run GEMMA analysis on families that have phenotype tables
+#   successfully generated. Some families may not have phenotype tables
+#   generated due to errors occurring.
+# Generate list of family names where phenotype table was generated
+find ${XO_DATA_DIR} -name "*_pheno.txt" | sort -V | sed -e "s,${XO_DATA_DIR},," -e 's,_pheno.txt,,' > ${XO_DATA_DIR}/all_families_pheno_names.txt
+
 # Build list of final cleaned split PED files
 find ${FINAL_SPLIT_PED_DIR} -name "*.ped" | sort -V > ${OUT_DIR}/split_by_family_cleaned_ped_list.txt
+# Pull out PED files where a phenotype table was successfully generated
+grep -f ${XO_DATA_DIR}/all_families_pheno_names.txt ${OUT_DIR}/split_by_family_cleaned_ped_list.txt > ${OUT_DIR}/split_by_family_cleaned_ped_wPheno_list.txt
 
 # Combine cleaned split PED files into a single PED file
-combine_split_ped.py ${FOUNDERS_PED} ${OUT_DIR}/split_by_family_cleaned_ped_list.txt > ${OUT_DIR}/gemma_analysis/all_families.ped
+combine_split_ped.py ${FOUNDERS_PED} ${OUT_DIR}/split_by_family_cleaned_ped_wPheno_list.txt > ${OUT_DIR}/gemma_analysis/all_families.ped
+
+# Copy MAP file and rename file to match with the all_families.ped file
+PLINK_PREFIX=$(basename ${OUT_DIR}/gemma_analysis/all_families.ped .ped)
+cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}.map
 
 # Update PED file
 PED_PREFIX=$(basename ${PED_FILE} .ped)
