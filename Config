@@ -76,7 +76,7 @@ DD_USER_DEF_MAP_FN="kosambi"
 DD_ERR_LOD_CUTOFF="2"
 
 #######################
-#   All lists and subdirectories below will be automatically generated
+#   Most of the lists and subdirectories below will be automatically generated
 #       by the pipeline and do not need to be modified unless the user
 #       manually changes the filename/subdirectory names
 
