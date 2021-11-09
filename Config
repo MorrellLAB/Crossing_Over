@@ -144,5 +144,9 @@ FOUNDERS_PED=
 #       directory and will include any file with a ".ped" file extension.
 FINAL_SPLIT_PED_DIR="${OUT_DIR}/split_by_family_fillIn"
 
-#   Full filepath to directory containing PLINK files with xo phenotypes
-PLINK_PHENO_DIR="${OUT_DIR}/gemma_analysis/plink_pheno_files"
+################################
+######## GEMMA_Analysis ########
+################################
+
+#   Full filepath to PLINK PED file output from running GEMMA_File_Prep
+PLINK_PED="${OUT_DIR}/gemma_analysis/all_families.ped"

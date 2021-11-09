@@ -41,29 +41,55 @@ grep -f ${XO_DATA_DIR}/all_families_pheno_names.txt ${OUT_DIR}/split_by_family_c
 # Combine cleaned split PED files into a single PED file
 combine_split_ped.py ${FOUNDERS_PED} ${OUT_DIR}/split_by_family_cleaned_ped_wPheno_list.txt > ${OUT_DIR}/gemma_analysis/all_families.ped
 
-# Copy MAP file and rename file to match with the all_families.ped file
 PLINK_PREFIX=$(basename ${OUT_DIR}/gemma_analysis/all_families.ped .ped)
+
+# Copy MAP file and rename file to match with the all_families.ped file
+# Except strip out any characters in the chromosome name
 cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}.map
 
-# Update PED file
-PED_PREFIX=$(basename ${PED_FILE} .ped)
-combine_pheno_and_plink_ped.py \
-    ${XO_DATA_DIR}/all_families_pheno_xo.txt \
-    ${OUT_DIR}/gemma_analysis/all_families.ped \
-    ${OUT_DIR}/gemma_analysis/plink_pheno_files
+# Generate FAM file without phenotypes from recombined PED files
+plink --file ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX} \
+    --make-just-fam \
+    --allow-extra-chr \
+    --out ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}
 
-# Generate FAM/MAP/BED/BIM files using plink
-for i in $(find ${OUT_DIR}/gemma_analysis/plink_pheno_files -name "pheno*.ped" | sort -V)
-do
-    filename=$(basename ${i} .ped)
-    # FAM file is the same as the first six fields in a PED file
-    cut -d' ' -f 1-6 ${i} > ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.fam
-    # Generate MAP file and put in same directory as plink files
-    cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.map
-    # Generate BED/BIM files
-    plink \
-        --file ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename} \
-        --make-bed \
-        --allow-extra-chr \
-        --out ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}
-done
+# Generate binary version of PED file (BED)
+plink --file ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX} \
+    --make-bed \
+    --allow-extra-chr \
+    --out ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}
+
+# First rename existing FAM file
+mv ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}.fam ${OUT_DIR}/gemma_analysis/temp_${PLINK_PREFIX}_no_pheno.fam
+
+# Update FAM file with all phenotypes from phenotype table
+# Note: Multiple phenotype columns in the FAM file is specifically
+#   formatted for use with GEMMA
+combine_pheno_and_plink_fam.py \
+    ${XO_DATA_DIR}/all_families_pheno_xo.txt \
+    ${OUT_DIR}/gemma_analysis/temp_${PLINK_PREFIX}_no_pheno.fam \
+    ${PLINK_PREFIX} \
+    ${OUT_DIR}/gemma_analysis
+
+# Update PED file
+# PED_PREFIX=$(basename ${PED_FILE} .ped)
+# combine_pheno_and_plink_ped.py \
+#     ${XO_DATA_DIR}/all_families_pheno_xo.txt \
+#     ${OUT_DIR}/gemma_analysis/all_families.ped \
+#     ${OUT_DIR}/gemma_analysis/plink_pheno_files
+
+# # Generate FAM/MAP/BED/BIM files using plink
+# for i in $(find ${OUT_DIR}/gemma_analysis/plink_pheno_files -name "pheno*.ped" | sort -V)
+# do
+#     filename=$(basename ${i} .ped)
+#     # FAM file is the same as the first six fields in a PED file
+#     cut -d' ' -f 1-6 ${i} > ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.fam
+#     # Generate MAP file and put in same directory as plink files
+#     cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.map
+#     # Generate BED/BIM files
+#     plink \
+#         --file ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename} \
+#         --make-bed \
+#         --allow-extra-chr \
+#         --out ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}
+# done
