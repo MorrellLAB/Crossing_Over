@@ -15,7 +15,7 @@ SCRIPT_DIR="$6"
 export PATH="${SCRIPT_DIR}"/scripts/Gemma:"${PATH}"
 
 # Check if output directories exist
-mkdir -p "${OUT_DIR}/gemma_analysis" "${OUT_DIR}/gemma_analysis/plink_pheno_files"
+mkdir -p "${OUT_DIR}/gemma_analysis"
 
 # Prepare header for output file
 # All files have the same header lines so we'll pull the header from the first file in the directory
@@ -31,7 +31,7 @@ done
 #   successfully generated. Some families may not have phenotype tables
 #   generated due to errors occurring.
 # Generate list of family names where phenotype table was generated
-find ${XO_DATA_DIR} -name "*_pheno.txt" | sort -V | sed -e "s,${XO_DATA_DIR},," -e 's,_pheno.txt,,' > ${XO_DATA_DIR}/all_families_pheno_names.txt
+find ${XO_DATA_DIR} -name "*_pheno.txt" | sort -V | sed -e "s,${XO_DATA_DIR}/,," -e 's,_pheno.txt,,' > ${XO_DATA_DIR}/all_families_pheno_names.txt
 
 # Build list of final cleaned split PED files
 find ${FINAL_SPLIT_PED_DIR} -name "*.ped" | sort -V > ${OUT_DIR}/split_by_family_cleaned_ped_list.txt

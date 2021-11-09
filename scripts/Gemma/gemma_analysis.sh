@@ -65,7 +65,3 @@ done
 
 # Run in parallel
 # parallel --tmpdir ${TEMP} run_gemma {} ${OUT_DIR}/gemma_analysis/plink_pheno_files ::: ${PLINK_BN_ARR[@]}
-
-# Generate Manhattan plot
-##### In development, currently doesn't work
-#GEMMA_Manhattan_Plot_GW_XO.R ${PLINK_PHENO_DIR}/output/${pheno_name}_${PLINK_BN_ARR}_lmm.assoc.txt

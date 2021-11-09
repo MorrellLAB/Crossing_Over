@@ -1,93 +1,121 @@
-# Make a Manhattan plot of -log(P_lrt) from the GEMMA results. These will be
+#!/usr/bin/env Rscript
+# Make a Manhattan plot of -log(p_lrt) from the GEMMA results. These will be
 # a little weird because the population is highly structured and the founders
 # are pretty closely related.
 
+library(qqman)
+library(dplyr)
+library(ggrepel)
+
 # Take command-line arguments
 args <- commandArgs(trailingOnly = TRUE)
-gwxo_filename <- args[1]
+xoassoc_fp <- args[1]
+pheno_name <- args[2]
+#suggestive_line_val <- -log10(as.numeric(args[3]))
+out_dir <- args[3]
+
+# Prepare output subdirectory
+# Remove trailing slash, it could mess with building filepaths
+out_dir_fp <- gsub("/$", "", out_dir)
+out_subdir <- paste0(out_dir_fp, "/plots")
+# Create output directory if it doesn't exist already
+if (!dir.exists(file.path(out_subdir))) {
+    dir.create(file.path(out_subdir))
+}
+
+# Prepare output filename
+out_fn <- paste0(out_subdir, "/", pheno_name, "_manhattan.pdf")
 
 # Read the GEMMA association results
-gw.xo <- read.table(gwxo_filename, header = TRUE)
+xo_pheno <- read.table(xoassoc_fp, header = TRUE)
+# qqman "manhattan" function requires chromosomes to be numeric
+#   strip the non-numeric characters from chromosome column
+xo_pheno$chr <- as.numeric(gsub("[^0-9]", "", xo_pheno$chr))
 
-# Digest up the plotting a little bit. We want to plot the seven chromosomes
-# side-by-side and give them distinct colors
-# This is "Dark2" with seven levels from RColorBrewer
-color_vector <- c("#1b9e77", "#d95f02", "#7570b3", "#e7298a", "#66a61e", "#e6ab02", "#a6761d")
+# Adjust P-values for multiple comparisons
+#xo_pheno$p_lrt_adjusted <- p.adjust(xo_pheno$p_lrt, method = "BH")
 
-# We will re-define the data to plot so that the chromosomes will be placed
-# end-to-end. Divide by 1M to put it in megabase scale
-chr1H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr1H"], n=1))
-chr2H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr2H"], n=1)) + chr1H_end
-chr3H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr3H"], n=1)) + chr2H_end
-chr4H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr4H"], n=1)) + chr3H_end
-chr5H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr5H"], n=1)) + chr4H_end
-chr6H_end <- as.numeric(tail(gw.xo$ps[gw.xo$chr == "chr6H"], n=1)) + chr5H_end
+# Extract SNPs of interest
+# We'll highlight the top hit in each chromosome as the default
+#snps_above_suggline <- xo_pheno[-log10(xo_pheno$p_lrt) > -log10(1e-2), "rs"]
+#snps_above_suggline <- xo_pheno[-log10(xo_pheno$p_lrt) > suggestive_line_val, "rs"]
+snps_of_interest <- xo_pheno %>%
+    group_by(chr) %>%
+    filter(-log10(p_lrt)==max(-log10(p_lrt))) %>%
+    ungroup %>%
+    select(rs)
 
-gw.xo_plt <- data.frame(
-    X=c(
-        gw.xo$ps[gw.xo$chr == "chr1H"],
-        gw.xo$ps[gw.xo$chr == "chr2H"] + chr1H_end,
-        gw.xo$ps[gw.xo$chr == "chr3H"] + chr2H_end,
-        gw.xo$ps[gw.xo$chr == "chr4H"] + chr3H_end,
-        gw.xo$ps[gw.xo$chr == "chr5H"] + chr4H_end,
-        gw.xo$ps[gw.xo$chr == "chr6H"] + chr5H_end,
-        gw.xo$ps[gw.xo$chr == "chr7H"] + chr6H_end) / 1000000,
-    Y=-log10(p.adjust(gw.xo$p_lrt, method="BH")),
-    Chrom=c(
-        rep("Chr1H", sum(gw.xo$chr == "chr1H")),
-        rep("Chr2H", sum(gw.xo$chr == "chr2H")),
-        rep("Chr3H", sum(gw.xo$chr == "chr3H")),
-        rep("Chr4H", sum(gw.xo$chr == "chr4H")),
-        rep("Chr5H", sum(gw.xo$chr == "chr5H")),
-        rep("Chr6H", sum(gw.xo$chr == "chr6H")),
-        rep("Chr7H", sum(gw.xo$chr == "chr7H"))
-        )
-    )
+# Prepare the dataset
+xo_pheno_ann <- xo_pheno %>%
+    # Compute chromosome size
+    group_by(chr) %>%
+    summarise(chr_len=max(ps)) %>%
+    
+    # Calculate cumulative position of each chromosome
+    mutate(tot=cumsum(as.numeric(chr_len))-as.numeric(chr_len)) %>%
+    select(-chr_len) %>%
+    
+    # Add this info to the initial dataset
+    left_join(xo_pheno, ., by=c("chr"="chr")) %>%
+    
+    # Add a cumulative position of each SNP
+    arrange(chr, ps) %>%
+    mutate(BPcum=ps+tot) %>%
+    
+    # Add highlight and annotation information
+    mutate(is_highlight=ifelse(rs %in% snps_of_interest$rs, "yes", "no")) #%>%
+    #mutate(is_annotate=ifelse(-log10(p_lrt) > 2, "yes", "no"))
 
-# pdf(file="GEMMA_BOPA_Manhattan.pdf", height=4, width=8)
-png(file="GEMMA_Manhattan_bopa_gw_xo_count.png", res=150, height=600, width=1200)
-#par(mfrow=c(3, 1), mar=c(1, 3, 0.75, 0.1), mgp=c(2, 1, 0))
-par(mfrow=c(1,1))
-chroms <- c("Chr1H", "Chr2H", "Chr3H", "Chr4H", "Chr5H", "Chr6H", "Chr7H")
-# Make a plot for genome-wide crossover count
-plot(0, type="n", axes=FALSE, ylim=c(0, 4), xlim=c(0, 4600), xlab="", ylab="-log10(P)", main="Genome-wide Crossover Count")
-sapply(
-    seq_along(chroms),
-    function(x) {
-        cname <- chroms[x]
-        color <- color_vector[x]
-        points(
-            gw.xo_plt$Y[gw.xo_plt$Chrom == cname] ~ gw.xo_plt$X[gw.xo_plt$Chrom == cname],
-            pch=19,
-            cex=0.25,
-            col=color)
-    })
-abline(h=-log10(0.01), col="red", lwd=0.75, lty=3)
-abline(h=-log10(0.1), col="blue", lwd=0.75, lty=3)
-abline(
-    v=c(chr1H_end, chr2H_end, chr3H_end, chr4H_end, chr5H_end, chr6H_end)/1000000,
-    lwd=0.25,
-    col="grey",
-    lty=2)
-axis(side=2)
+# Prepare x-axis
+axis_df <- xo_pheno_ann %>% group_by(chr) %>%
+    summarize(center=(max(BPcum) + min(BPcum)) / 2)
 
-mtext(
-    sub("Chr", "", chroms),
-    side=1,
-    at=c(
-        mean(c(0, chr1H_end)),
-        mean(c(chr1H_end, chr2H_end)),
-        mean(c(chr2H_end, chr3H_end)),
-        mean(c(chr3H_end, chr4H_end)),
-        mean(c(chr4H_end, chr5H_end)),
-        mean(c(chr5H_end, chr6H_end)),
-        mean(c(chr6H_end, 4600000000))
-        )/1000000,
-    cex=0.75
-    )
+# Generate the plot
+ggplot(xo_pheno_ann, aes(x=BPcum, y=-log10(p_lrt))) +
+    
+    # Show all points
+    geom_point( aes(color=as.factor(chr)), alpha=0.8, size=1.3) +
+    scale_color_manual(values = rep(c("grey10", "grey60"), 22 )) +
+    
+    ## Add suggestive line
+    #geom_hline(aes(yintercept=suggestive_line_val), colour="blue") +
+    
+    # custom X axis:
+    scale_x_continuous( label = axis_df$chr, breaks = axis_df$center ) +
+    # remove space between plot area and x axis
+    scale_y_continuous(expand = c(0, 0), limits=c(0, max(-log10(xo_pheno_ann$p_lrt)+0.5))) +
+    
+    # Add highlighted points
+    geom_point(data=subset(xo_pheno_ann, is_highlight=="yes"), color="orange", size=2) +
+    
+    # Add label using ggrepel to avoid overlapping
+    geom_text_repel(data=subset(xo_pheno_ann, is_highlight=="yes"), 
+                    aes(label=rs), size=3.8, fontface="bold",
+                    box.padding=0.3,
+                    # Do not repel away from left edge, only right edge
+                    xlim=c(-Inf, NA),
+                    # Do not repel from top or bottom edges
+                    ylim=c(-Inf, Inf)) +
 
-dev.off()
+    # Custom the theme:
+    theme_bw() +
+    theme( 
+        legend.position="none",
+        panel.border = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()
+    ) +
+    labs(x="Chromosome")
 
-# Part below is for exploratory purposes
-gw.xo$corrected_p = -log10(p.adjust(gw.xo$p_lrt, method="BH"))
-head(gw.xo[order(gw.xo$corrected_p, decreasing = T), ])
+# Save plot to file
+ggsave(filename=out_fn)
+
+#--------------------------
+# Alternative manhattan plotting approach currently unused because it is less flexible
+# manhattan(xo_pheno, chr="chr", bp="ps", p="p_lrt", snp="rs", chrlabs=c(unique(as.character(xo_pheno$chr))),
+#           logp=TRUE,
+#           alpha(c("gray10", "skyblue"), 0.7),
+#           suggestiveline=-log10(1e-05),
+#           genomewideline=-log10(5e-08),
+#           annotatePval=-log10(1e-05),
+#           annotateTop=TRUE)

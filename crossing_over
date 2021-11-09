@@ -18,6 +18,7 @@ function usage() {
         4c | Crossovers_Summary_Plots
         5a | GEMMA_File_Prep
         5b | GEMMA_Analysis
+        5c | GEMMA_Plots
     
     And: <config> is the full file path to the configuration file
 
@@ -146,8 +147,15 @@ case "${ROUTINE}" in
         "${CROSSING_OVER}"/scripts/Gemma/gemma_analysis.sh \
             "${PLINK_PED}" \
             "${OUT_DIR}" \
-            "${SCRIPT_DIR}" \
+            "${CROSSING_OVER}" \
             "${TEMP}"
+    ;;
+    5c | GEMMA_Plots)
+        # Run GEMMA analysis
+        "${CROSSING_OVER}"/scripts/Gemma/gemma_output_plots.sh \
+            "${PLINK_PED}" \
+            "${OUT_DIR}" \
+            "${CROSSING_OVER}"
     ;;
     * )
     usage
