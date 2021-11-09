@@ -144,7 +144,7 @@ case "${ROUTINE}" in
     5b | GEMMA_Analysis)
         # Run GEMMA analysis
         "${CROSSING_OVER}"/scripts/Gemma/gemma_analysis.sh \
-            "${PED_FILE}" \
+            "${PLINK_PED}" \
             "${OUT_DIR}" \
             "${SCRIPT_DIR}" \
             "${TEMP}"
