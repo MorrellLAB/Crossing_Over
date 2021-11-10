@@ -19,12 +19,15 @@ export PATH="${SCRIPT_DIR}"/scripts/Gemma:"${PATH}"
 #   Example command run from within the same directory as the linux static build"
 #       ln -s /path/to/static_build/GEMMA-0.98.1/gemma-0.98.1-linux-static gemma
 
+# Check if temp directory exists, if not, make it
+mkdir -p ${TEMP}
+
 # Get PED file basename
 PLINK_DIR=$(dirname ${PLINK_PED})
 PLINK_BN=$(basename ${PLINK_PED} .ped)
 
 PHENO_COLNAMES=${PLINK_DIR}/${PLINK_BN}_pheno_order_in_fam.txt
-PHENO_COLNAME_ARR=($(tr ' ' '\n' < ${PLINK_DIR}/${PLINK_BN}_pheno_order_in_fam.txt))
+PHENO_COLNAME_ARR=($(tr ' ' '\n' < ${PHENO_COLNAMES}))
 # Add placeholder as first element of array so column numbers are easier to reference later on
 PHENO_COLNAME_ARR=("placeholder" "${PHENO_COLNAME_ARR[@]}")
 # Remember the first element is a placeholder, so don't count it
@@ -33,8 +36,9 @@ NUM_PHENO=$(echo $((${#PHENO_COLNAME_ARR[@]}-1)))
 function run_gemma() {
     local plink_bfilename="$1"
     local out_dir="$2"
-    local col_num="$3" # Which phenotype column are we processing?
-    local pheno_colname="$4" # Pulled from phenotype table header
+    local col_pheno="$3" # Which column and phenotype are we processing?
+    col_num=$(echo ${col_pheno} | tr '..' '\t' | awk '{print $1}')
+    pheno_colname=$(echo ${col_pheno} | tr '..' '\t' | awk '{print $2}')
     echo "Processing phenotype: ${pheno_colname} in column ${col_num}..."
     gemma \
         -bfile ${plink_bfilename} \
@@ -57,11 +61,17 @@ export -f run_gemma
 cd ${PLINK_DIR}
 # Each phenotype is one column in the FAM file starting at column 6
 #   Remember index 0 is a placeholder, so we start with index 1
-for i in $(seq 1 ${NUM_PHENO})
+SEQ_ARR=($(seq 0 ${NUM_PHENO}))
+SEQ_PHENO_ARR=()
+# Iteratively build array values
+for num in ${SEQ_ARR[@]}
 do
-    curr_pheno_colname=${PHENO_COLNAME_ARR[$i]}
-    run_gemma ${PLINK_BN} ${OUT_DIR}/gemma_analysis ${i} ${curr_pheno_colname}
+    if [[ ${num} != "0" ]]; then
+        echo "Phenotype: ${PHENO_COLNAME_ARR[${num}]} in column ${num}."
+        new_elem=$(echo "${num}..${PHENO_COLNAME_ARR[${num}]}")
+        SEQ_PHENO_ARR+=("${new_elem}")
+    fi
 done
 
 # Run in parallel
-# parallel --tmpdir ${TEMP} run_gemma {} ${OUT_DIR}/gemma_analysis/plink_pheno_files ::: ${PLINK_BN_ARR[@]}
+parallel --verbose --tmpdir ${TEMP} run_gemma ${PLINK_BN} ${OUT_DIR}/gemma_analysis {} ::: ${SEQ_PHENO_ARR[@]}
