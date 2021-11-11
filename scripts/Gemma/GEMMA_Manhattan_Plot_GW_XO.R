@@ -83,7 +83,7 @@ ggplot(xo_pheno_ann, aes(x=BPcum, y=-log10(p_lrt))) +
     # custom X axis:
     scale_x_continuous( label = axis_df$chr, breaks = axis_df$center ) +
     # remove space between plot area and x axis
-    scale_y_continuous(expand = c(0, 0), limits=c(0, max(-log10(xo_pheno_ann$p_lrt)+0.5))) +
+    scale_y_continuous(expand = c(0, 0), limits=c(0, max(-log10(xo_pheno_ann$p_lrt)+0.8))) +
     
     # Add highlighted points
     geom_point(data=subset(xo_pheno_ann, is_highlight=="yes"), color="orange", size=2) +
