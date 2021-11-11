@@ -126,7 +126,12 @@ USERDEF_PGENO_ERR_CUTOFF="5"
 USERDEF_PMISS_CUTOFF="5"
 
 #   Full file path to the directory containing XO phenotypes
+#   This is used by multiple steps, so make sure it is defined
 XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
+
+################################
+####### GEMMA_File_Prep ########
+################################
 
 #   Full filepath to the founders only PED file
 #       PED file that contains only the founder lines

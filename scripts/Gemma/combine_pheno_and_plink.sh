@@ -62,34 +62,21 @@ plink --file ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX} \
 # First rename existing FAM file
 mv ${OUT_DIR}/gemma_analysis/${PLINK_PREFIX}.fam ${OUT_DIR}/gemma_analysis/temp_${PLINK_PREFIX}_no_pheno.fam
 
+# Generate a FAM file for founders only
+FOUNDERS_PED_DIR=$(dirname ${FOUNDERS_PED})
+FOUNDERS_PREFIX=$(basename ${FOUNDERS_PED} .ped)
+# The FAM file is just the first 6 fields of the PED file
+#   This is only needed for the purposes of knowing which individuals
+#   are the parents in the FAM file, so we don't need the full plink set
+#   of files
+cut -d' ' -f 1-6 ${FOUNDERS_PED} > ${FOUNDERS_PED_DIR}/${FOUNDERS_PREFIX}.fam
+
 # Update FAM file with all phenotypes from phenotype table
 # Note: Multiple phenotype columns in the FAM file is specifically
 #   formatted for use with GEMMA
 combine_pheno_and_plink_fam.py \
     ${XO_DATA_DIR}/all_families_pheno_xo.txt \
     ${OUT_DIR}/gemma_analysis/temp_${PLINK_PREFIX}_no_pheno.fam \
+    ${FOUNDERS_PED_DIR}/${FOUNDERS_PREFIX}.fam \
     ${PLINK_PREFIX} \
     ${OUT_DIR}/gemma_analysis
-
-# Update PED file
-# PED_PREFIX=$(basename ${PED_FILE} .ped)
-# combine_pheno_and_plink_ped.py \
-#     ${XO_DATA_DIR}/all_families_pheno_xo.txt \
-#     ${OUT_DIR}/gemma_analysis/all_families.ped \
-#     ${OUT_DIR}/gemma_analysis/plink_pheno_files
-
-# # Generate FAM/MAP/BED/BIM files using plink
-# for i in $(find ${OUT_DIR}/gemma_analysis/plink_pheno_files -name "pheno*.ped" | sort -V)
-# do
-#     filename=$(basename ${i} .ped)
-#     # FAM file is the same as the first six fields in a PED file
-#     cut -d' ' -f 1-6 ${i} > ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.fam
-#     # Generate MAP file and put in same directory as plink files
-#     cp ${MAP_FILE} ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}.map
-#     # Generate BED/BIM files
-#     plink \
-#         --file ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename} \
-#         --make-bed \
-#         --allow-extra-chr \
-#         --out ${OUT_DIR}/gemma_analysis/plink_pheno_files/${filename}
-# done

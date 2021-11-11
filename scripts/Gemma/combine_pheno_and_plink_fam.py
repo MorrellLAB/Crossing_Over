@@ -32,16 +32,22 @@ def read_xo_counts(xo_pheno_fp):
     return(counts_dict)
 
 
-def read_plink_fam(plink_fam_fp):
-    """Read in plink .ped file."""
+def read_plink_fam(founders_fam_fp, plink_fam_fp):
+    """Read in plink .fam file."""
     parents_dict = {}
+    with open(founders_fam_fp, "rt") as handle:
+        for record in handle:
+            parents_dict[record.split()[1]] = record.split()
+
     fam_dict = {}
     with open(plink_fam_fp, "rt") as handle:
         for record in handle:
-            if record.startswith("-9"):
-                parents_dict[record.split()[1]] = record.split()
-            else:
-                fam_dict[record.split()[1]] = record.split()
+            curr_key = record.split()[1]
+            curr_rec = record.split()
+            # Make sure we only add progeny to fam_dict
+            #   and NOT the parents if they are present in the PED file
+            if curr_key not in parents_dict.keys():
+                fam_dict[curr_key] = curr_rec
     return(parents_dict, fam_dict)
 
 
@@ -78,12 +84,12 @@ def write_to_fam(parents, fam_w_pheno, out_fp):
     return
 
 
-def main(xo_pheno_fp, fam_fp, plink_prefix, out_dir):
+def main(xo_pheno_fp, fam_fp, founders_fam_fp, plink_prefix, out_dir):
     """Driver function."""
     # Output file prefix
     # Read in files
     xo_pheno = read_xo_counts(xo_pheno_fp)
-    parents, fam = read_plink_fam(fam_fp)
+    parents, fam = read_plink_fam(founders_fam_fp, fam_fp)
     # Add xo phenotype to fam dict
     updated_fam = add_xo_pheno(fam, xo_pheno)
     # Prepare parent phenotype placeholders (missing phenotype)
@@ -114,4 +120,4 @@ if len(sys.argv) < 2:
     exit(1)
 else:
     # Run the program
-    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]) # Run the program
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]) # Run the program
