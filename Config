@@ -138,6 +138,8 @@ XO_DATA_DIR="${OUT_DIR}/rqtl2/phenotype_tables"
 #       This gets used when we re-combine our split PED files back into a
 #           single PED file so we can add the new phenotypes and prepare for
 #           the Gemma analysis
+#   File should only include founder lines where phenotype tables
+#       were successfully generated
 FOUNDERS_PED=
 
 #   Full filepath to the directory containing cleaned split PED files to combine
