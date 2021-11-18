@@ -99,8 +99,13 @@ PED_DIR="${OUT_DIR}/split_by_family_fillIn"
 P2RQTL2_SUFFIX="_Mendel_fillIn.ped"
 
 #   Full file path to the directory containing qtl2 inputs
+#       (This will also get used in Crossover_Phenotyping)
 #       The default path below will work assuming you used the directory output from the previous step in the pipeline and didn't rename it
 QTL_INPUTS_DIR="${OUT_DIR}/qtl2inputs"
+
+##############################################################
+###### Crossover_Phenotyping / Crossovers_Summary_Plots ######
+##############################################################
 
 #   User defined error probability for R/qtl2
 #   Default: 0.002
@@ -124,6 +129,11 @@ USERDEF_PGENO_ERR_CUTOFF="5"
 #   Valid numbers range between 0 and 100
 #   Default: "5"
 USERDEF_PMISS_CUTOFF="5"
+
+#   Minimum probability for making a call. If the maximum probability is less than this value, the maxmarg() function will return NA
+#   This will get used to pick the most likely genotype from a set of genotype probabilities given that it is greater than this threshold
+#   Default: 0.95
+MAXMARG_MINPROB="0.95"
 
 #   Full file path to the directory containing XO phenotypes
 #   This is used by multiple steps, so make sure it is defined

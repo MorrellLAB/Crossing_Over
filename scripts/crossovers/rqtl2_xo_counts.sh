@@ -13,8 +13,9 @@ USERDEF_MAP_FN="$4"
 USERDEF_ERROR_LOD_CUTOFF="$5"
 USERDEF_PGENO_ERR_CUTOFF="$6"
 USERDEF_PMISS_CUTOFF="$7"
-OUT_DIR="${8}/rqtl2"
-SCRIPT_DIR="$9"
+MAXMARG_MINPROB="$8"
+OUT_DIR="${9}/rqtl2"
+SCRIPT_DIR="${10}"
 
 # Export path to directory that contains executable script
 export PATH="${SCRIPT_DIR}"/scripts/crossovers:"${PATH}"
@@ -53,8 +54,9 @@ function xo_counts() {
     local userdef_error_lod_cutoff="$5"
     local userdef_pgeno_err_cutoff="$6"
     local userdef_pmiss_cutoff="$7"
-    local out_dir="$8"
-    local fam_log_dir="$9"
+    local maxmarg_minprob="$8"
+    local out_dir="$9"
+    local fam_log_dir="${10}"
     name=$(basename "${yaml_file}" _forqtl2.yaml)
     printf "\n"
     echo "Processing sample: ${name}..."
@@ -67,6 +69,7 @@ function xo_counts() {
         "${userdef_error_lod_cutoff}" \
         "${userdef_pgeno_err_cutoff}" \
         "${userdef_pmiss_cutoff}" \
+        "${maxmarg_minprob}" \
         "${out_dir}" \
         "${fam_log_dir}" 2>&1 | tee "${fam_log_dir}/${name}.log"
 }
@@ -82,17 +85,20 @@ else
     echo "User defined error probability is non-negative, proceeding to counting crossovers..."
 fi
 
+# Print out maxmarg cutoff being used
+echo "User defined threshold for the minimum probability used to pick the most likely genotype from a set of genotype probabilities: ${MAXMARG_MINPROB}"
+
 # Run program in parallel
 printf "\n"
 echo "##########################"
 echo "Counting crossovers..."
-parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${USERDEF_ERROR_LOD_CUTOFF}" "${USERDEF_PGENO_ERR_CUTOFF}" "${USERDEF_PMISS_CUTOFF}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
+parallel xo_counts {} "${PCENT_FP}" "${USERDEF_ERR_PROB}" "${USERDEF_MAP_FN}" "${USERDEF_ERROR_LOD_CUTOFF}" "${USERDEF_PGENO_ERR_CUTOFF}" "${USERDEF_PMISS_CUTOFF}" "${MAXMARG_MINPROB}" "${OUT_DIR}" "${OUT_DIR}/log_files" :::: "${YAML_DIR}/all_yaml_files_list.txt"
 
 # Print some file number summaries to help catch errors
 printf "\n"
 echo "##########################"
 echo "Printing some file number summaries to help detect errors/issues..."
-num_yaml_files=$(wc -l ${YAML_DIR}/all_yaml_files_list.txt)
+num_yaml_files=$(wc -l "${YAML_DIR}/all_yaml_files_list.txt")
 echo "Number of YAML files we started with (i.e., attempted to process): ${num_yaml_files}"
 num_phys_map_plots_miss=$(find ${OUT_DIR}/physical_map_plots_miss/pmap_by_chr -name "*.pdf" | wc -l)
 echo "Number of plots generated in ${OUT_DIR}/physical_map_plots_miss/pmap_by_chr directory: ${num_phys_map_plots_miss}"
@@ -101,7 +107,7 @@ echo "Number of phenotype tables output from script: ${num_pheno_tables}"
 echo "If no errors occurred, the number of phenotype tables should be the same as the number of YAML files we started with."
 echo "Identifying files where phenotype table did not get generated (likely due to errors)..."
 find ${OUT_DIR}/phenotype_tables -name "*pheno.txt" | sed -e "s,${OUT_DIR}/phenotype_tables/,," -e "s,_pheno.txt,," | sort -V > ${OUT_DIR}/log_files/temp_pheno_tables_names.txt
-sed -e "s,${YAML_DIR}/,," -e "s,_forqtl2.yaml,," ${YAML_DIR}/all_yaml_files_list.txt | sort -V > ${OUT_DIR}/log_files/temp_yaml_names.txt
+sed -e "s,${YAML_DIR}/,," -e "s,_forqtl2.yaml,," "${YAML_DIR}"/all_yaml_files_list.txt | sort -V > ${OUT_DIR}/log_files/temp_yaml_names.txt
 grep -vf ${OUT_DIR}/log_files/temp_pheno_tables_names.txt ${OUT_DIR}/log_files/temp_yaml_names.txt > ${OUT_DIR}/log_files/no_pheno_table_sample_names.txt
 echo "List of sample names where phenotype table did not get generated is located here: ${OUT_DIR}/log_files/no_pheno_table_sample_names.txt"
 echo "Log files are located at: ${OUT_DIR}/log_files"

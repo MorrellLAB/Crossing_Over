@@ -606,7 +606,7 @@ UpdateCounts <- function(pheno_df, n_chrom) {
     return(new_pheno_df)
 }
 
-RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file) {
+RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file, maxmarg_minprob) {
     # Set the total number of chromosomes
     n_chrom <- length(dat$is_x_chr)
     # Plot percent missing
@@ -623,7 +623,8 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     bpr_start <- calc_genoprob(dat, error_prob=as.numeric(userdef_err_prob), map_function=userdef_map_fn, cores=0)
     bpr_start_clean <- clean_genoprob(bpr_start, value_threshold=0.000001, column_threshold=0.01, cores=0)
     # Identify most probable genotype at each position then count exchanges
-    bm_start <- maxmarg(bpr_start_clean, minprob=0.95, cores=0)
+    #bm_start <- maxmarg(bpr_start_clean, minprob=0.95, cores=0)
+    bm_start <- maxmarg(bpr_start_clean, minprob=maxmarg_minprob, cores=0)
     
     # Calculate genotype error LOD scores and drop markers that have genotyping error rates
     # above the cutoff and markers that have proportion missing above the cutoff
@@ -656,7 +657,8 @@ RunXOAnalysis <- function(dat, pcent, samp_name, userdef_err_prob, userdef_map_f
     bpr_clean <- clean_genoprob(bpr, value_threshold=0.000001, column_threshold=0.01, cores=0)
     # Identify most probable genotype at each position then count exchanges
     #bm <- maxmarg(bpr, minprob=0.95, cores=0)
-    bm <- maxmarg(bpr_clean, minprob=0.95, cores=0)
+    #bm <- maxmarg(bpr_clean, minprob=0.95, cores=0)
+    bm <- maxmarg(bpr_clean, minprob=maxmarg_minprob, cores=0)
     
     # Crossover counts (after dropping markers)
     # Returns counts of crossovers on each chromosome (as columns) in each individual
@@ -770,8 +772,9 @@ Main <- function() {
     error_lod_cutoff <- args[5]
     emarker_gt_cutoff <- as.numeric(args[6])
     pmis_marker_cutoff <- as.numeric(args[7])
-    out_dir <- args[8]
-    fam_log_dir <- args[9]
+    maxmarg_minprob <- as.numeric(args[8])
+    out_dir <- args[9]
+    fam_log_dir <- args[10]
     
     # Read in files
     dat <- ReadFile(yaml_fp)
@@ -810,7 +813,7 @@ Main <- function() {
         capture.output(summary(dat_omit_null), file = paste0(out_dir_too_few, "/", "too_few_markers_per_chr-", samp_name, ".txt"))
     } else {
         # Proceed with analysis
-        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file)
+        RunXOAnalysis(dat_omit_null, pcent, samp_name, userdef_err_prob, userdef_map_fn, error_lod_cutoff, emarker_gt_cutoff, pmis_marker_cutoff, out_dir, fam_log_file, maxmarg_minprob)
     }
 }
 
