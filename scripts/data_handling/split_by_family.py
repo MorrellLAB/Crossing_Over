@@ -78,7 +78,7 @@ def main(pedfile, outdir):
             os.makedirs(outdir_fp + "/split_by_family")
         
         # Send it to a file
-        handle = open(outdir_fp + "/split_by_family/" + fam + '_Mendel.ped', 'w')
+        handle = open(outdir_fp + "/split_by_family/" + fam + '_family.ped', 'w')
         for ind in famped:
             handle.write(' '.join(ind) + '\n')
         handle.flush()
